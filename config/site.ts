@@ -12,18 +12,14 @@ interface SiteConfig {
 }
 
 export const siteConfig: SiteConfig = {
-  name: "Next.js",
+  name: "Deecide",
   description:
-    "Beautifully designed components built with Radix UI and Tailwind CSS.",
+    "For people who just can't make up their mind.",
   mainNav: [
-    {
-      title: "Home",
-      href: "/",
-    },
   ],
   links: {
-    twitter: "https://twitter.com/shadcn",
-    github: "https://github.com/shadcn/ui",
+    twitter: "#",
+    github: "#",
     docs: "https://ui.shadcn.com",
   },
 }
