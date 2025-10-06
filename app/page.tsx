@@ -639,7 +639,7 @@ export default function Home() {
       />
       <div className="flex flex-col items-center md:justify-center flex-1 w-full max-w-[402px] relative z-10">
         <p className="text-neutral-400 text-sm leading-5 text-center mb-32 max-w-[259px] md:mb-8">
-          "ดี Dee" Means good in Thai — Make better decisions with structure and
+          &ldquo;ดี Dee&rdquo; Means good in Thai — Make better decisions with structure and
           clarity
         </p>
 
