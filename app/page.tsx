@@ -132,6 +132,19 @@ export default function Home() {
   useEffect(() => {
     if ((step === "evaluation" || step === "weighing") && scrollContainerRef.current) {
       const cardElements = scrollContainerRef.current.querySelectorAll('[data-card-index]');
+
+      // When first entering weighing step, scroll to first card
+      if (step === "weighing" && weights.length === 0) {
+        const firstCard = cardElements[0];
+        if (firstCard) {
+          setTimeout(() => {
+            firstCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 100);
+        }
+        return;
+      }
+
+      // Otherwise scroll to next card after scoring/weighing
       const nextIndex = step === "evaluation" ? currentIndex : weights.length;
       const nextCard = cardElements[nextIndex];
       if (nextCard && nextIndex > 0) {
@@ -264,15 +277,15 @@ export default function Home() {
 
   if (step === "weighing") {
     return (
-      <div className="bg-[#292929] min-h-screen flex flex-col p-4 relative">
+      <div className="bg-[#292929] h-screen flex flex-col relative overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-30"
           //style={{ backgroundImage: "url('/thai-temple.png')" }}
         />
 
-        <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full">
+        <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full px-4">
           {/* Header */}
-          <div className="pt-8 pb-6">
+          <div className="pt-8 pb-4 flex-shrink-0">
             <h1 className="text-white text-2xl font-semibold text-center">{decisionTitle}</h1>
             <p className="text-neutral-400 text-sm text-center mt-2">
               How important is each criterion? ({weights.length}/{criteria.length})
@@ -280,12 +293,12 @@ export default function Home() {
           </div>
 
           {/* Weighing cards - Vertical carousel */}
-          <div className="relative h-[400px] md:h-[500px]">
+          <div className="flex-1 relative overflow-hidden">
             {/* Top gradient */}
-            <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#292929] via-[#292929]/90 to-transparent z-20 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#292929] via-[#292929]/90 to-transparent z-10 pointer-events-none" />
 
             {/* Bottom gradient */}
-            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#292929] via-[#292929]/90 to-transparent z-20 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-transparent via-[#292929]/90 to-[#292929] z-10 pointer-events-none" />
 
             <div ref={scrollContainerRef} className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide">
               {/* Spacer top */}
@@ -298,12 +311,18 @@ export default function Home() {
                   <div
                     key={criterionIndex}
                     data-card-index={criterionIndex}
-                    className="snap-center flex-shrink-0 px-4 mb-4"
+                    className="snap-center flex-shrink-0 mb-4"
                   >
                     <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-6">
                       <div className="mb-4">
                         <h3 className="text-white text-lg font-semibold mb-1">{criterion}</h3>
                         <p className="text-neutral-400 text-sm">How important is this to you?</p>
+                      </div>
+
+                      {/* Weight legend */}
+                      <div className="flex justify-between mb-3 px-1">
+                        <span className="text-xs text-neutral-500">Not important</span>
+                        <span className="text-xs text-neutral-500">Very important</span>
                       </div>
 
                       {/* Weight buttons */}
@@ -322,12 +341,6 @@ export default function Home() {
                           </button>
                         ))}
                       </div>
-
-                      {/* Weight labels */}
-                      <div className="flex justify-between mt-2 px-1">
-                        <span className="text-xs text-neutral-500">Not important</span>
-                        <span className="text-xs text-neutral-500">Very important</span>
-                      </div>
                     </div>
                   </div>
                 );
@@ -339,18 +352,18 @@ export default function Home() {
           </div>
 
           {/* Navigation buttons */}
-          <div className="w-full fixed bottom-0 left-0 right-0 p-4 md:relative md:p-0 md:mt-4">
-            <div className="flex gap-3 max-w-[402px] mx-auto">
+          <div className="flex-shrink-0 pt-4 pb-4 bg-[#292929] border-t border-neutral-800 relative z-30">
+            <div className="flex gap-3">
               <button
                 onClick={() => setStep("evaluation")}
-                className="flex-1 bg-neutral-700 text-white py-3 px-4 rounded-xl hover:bg-neutral-600 transition-colors text-sm font-medium"
+                className="flex-1 bg-neutral-700 text-white py-3 px-4 rounded-xl hover:bg-neutral-600 transition-colors text-sm font-medium shadow-lg"
               >
                 Back
               </button>
               <button
                 onClick={() => setStep("results")}
                 disabled={weights.length < criteria.length}
-                className="flex-1 bg-[#735cf6] text-white py-3 px-4 rounded-xl hover:bg-[#6247e5] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#735cf6] text-white py-3 px-4 rounded-xl hover:bg-[#6247e5] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 See Results
               </button>
@@ -365,15 +378,15 @@ export default function Home() {
     const totalEvaluations = getTotalEvaluations();
 
     return (
-      <div className="bg-[#292929] min-h-screen flex flex-col p-4 relative">
+      <div className="bg-[#292929] h-screen flex flex-col relative overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-30"
           //style={{ backgroundImage: "url('/thai-temple.png')" }}
         />
 
-        <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full">
+        <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full px-4">
           {/* Header */}
-          <div className="pt-8 pb-6">
+          <div className="pt-8 pb-4 flex-shrink-0">
             <h1 className="text-white text-2xl font-semibold text-center">{decisionTitle}</h1>
             <p className="text-neutral-400 text-sm text-center mt-2">
               Score each option ({currentIndex}/{totalEvaluations})
@@ -381,12 +394,12 @@ export default function Home() {
           </div>
 
           {/* Evaluation cards - Vertical carousel */}
-          <div className="relative h-[400px] md:h-[500px]">
+          <div className="flex-1 relative overflow-hidden">
             {/* Top gradient */}
-            <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#292929] via-[#292929]/90 to-transparent z-20 pointer-events-none" />
+            <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#292929] via-[#292929]/90 to-transparent z-10 pointer-events-none" />
 
             {/* Bottom gradient */}
-            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-[#292929] via-[#292929]/90 to-transparent z-20 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-transparent via-[#292929]/90 to-[#292929] z-10 pointer-events-none" />
 
             <div ref={scrollContainerRef} className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide">
               {/* Spacer top */}
@@ -401,12 +414,18 @@ export default function Home() {
                     <div
                       key={`${optionIndex}-${criterionIndex}`}
                       data-card-index={linearIndex}
-                      className="snap-center flex-shrink-0 px-4 mb-4"
+                      className="snap-center flex-shrink-0 mb-4"
                     >
                       <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-6">
                         <div className="mb-4">
                           <h3 className="text-white text-lg font-semibold mb-1">{option}</h3>
                           <p className="text-neutral-400 text-sm">{criterion}</p>
+                        </div>
+
+                        {/* Score legend */}
+                        <div className="flex justify-between mb-3 px-1">
+                          <span className="text-xs text-neutral-500">Least desirable</span>
+                          <span className="text-xs text-neutral-500">Most desirable</span>
                         </div>
 
                         {/* Score buttons */}
@@ -425,12 +444,6 @@ export default function Home() {
                             </button>
                           ))}
                         </div>
-
-                        {/* Score labels */}
-                        <div className="flex justify-between mt-2 px-1">
-                          <span className="text-xs text-neutral-500">Least</span>
-                          <span className="text-xs text-neutral-500">Most</span>
-                        </div>
                       </div>
                     </div>
                   );
@@ -443,18 +456,18 @@ export default function Home() {
           </div>
 
           {/* Navigation buttons */}
-          <div className="w-full fixed bottom-0 left-0 right-0 p-4 md:relative md:p-0 md:mt-4">
-            <div className="flex gap-3 max-w-[402px] mx-auto">
+          <div className="flex-shrink-0 pt-4 pb-4 bg-[#292929] border-t border-neutral-800 relative z-30">
+            <div className="flex gap-3">
               <button
                 onClick={() => setStep("criteria")}
-                className="flex-1 bg-neutral-700 text-white py-3 px-4 rounded-xl hover:bg-neutral-600 transition-colors text-sm font-medium"
+                className="flex-1 bg-neutral-700 text-white py-3 px-4 rounded-xl hover:bg-neutral-600 transition-colors text-sm font-medium shadow-lg"
               >
                 Back
               </button>
               <button
                 onClick={() => setStep("weighing")}
                 disabled={scores.length < totalEvaluations}
-                className="flex-1 bg-[#735cf6] text-white py-3 px-4 rounded-xl hover:bg-[#6247e5] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#735cf6] text-white py-3 px-4 rounded-xl hover:bg-[#6247e5] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
               >
                 Continue
               </button>
@@ -467,51 +480,54 @@ export default function Home() {
 
   if (step === "criteria") {
     return (
-      <div className="bg-[#292929] min-h-screen flex flex-col p-4 relative">
+      <div className="bg-[#292929] h-screen flex flex-col relative overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-30"
           //style={{ backgroundImage: "url('/thai-temple.png')" }}
         />
 
-        <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full">
+        <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full px-4">
           {/* Header with decision title */}
-          <div className="pt-8 pb-6">
+          <div className="pt-8 pb-4 flex-shrink-0">
             <h1 className="text-white text-xl font-semibold text-center">{decisionTitle}</h1>
             <p className="text-neutral-400 text-sm text-center mt-2">Add your decision criteria</p>
           </div>
 
-          {/* Criteria list - grows upward, scrollable */}
-          <div className="flex-1 overflow-y-auto pb-4 md:pb-0">
-            <div className="flex flex-col gap-2">
-              {criteria.map((criterion, index) => (
-                <div
-                  key={index}
-                  className="bg-[#2c2c2c] border border-neutral-700 rounded-xl p-4 flex items-center justify-between"
-                >
-                  <span className="text-white text-sm">{criterion}</span>
-                  <button
-                    onClick={() => handleRemoveCriteria(index)}
-                    className="text-neutral-400 hover:text-white transition-colors"
+          {/* Criteria list - grows upward from input, scrollable */}
+          <div className="flex-1 overflow-y-auto pb-2">
+            <div className="flex flex-col gap-2 min-h-full justify-end">
+              {criteria.slice().reverse().map((criterion, reverseIndex) => {
+                const index = criteria.length - 1 - reverseIndex;
+                return (
+                  <div
+                    key={index}
+                    className="bg-[#2c2c2c] border border-neutral-700 rounded-xl p-4 flex items-center justify-between"
                   >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  </button>
-                </div>
-              ))}
+                    <span className="text-white text-sm">{criterion}</span>
+                    <button
+                      onClick={() => handleRemoveCriteria(index)}
+                      className="text-neutral-400 hover:text-white transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Input at bottom - fixed position */}
-          <div className="w-full fixed bottom-0 left-0 right-0 p-4 md:relative md:p-0 md:mt-4">
-            <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-4 flex flex-col gap-4 max-w-[402px] mx-auto">
+          {/* Input at bottom - moves with keyboard */}
+          <div className="flex-shrink-0 pt-2 pb-4 bg-[#292929]">
+            <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-4 flex flex-col gap-4">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddCriteria()}
                 placeholder="Add a criterion..."
-                className="bg-transparent text-neutral-400 text-sm leading-5 outline-none placeholder:text-neutral-400 w-full"
+                className="bg-transparent text-neutral-400 text-base outline-none placeholder:text-neutral-400 w-full"
               />
 
               <div className="flex items-center justify-end">
@@ -550,51 +566,54 @@ export default function Home() {
 
   if (step === "options") {
     return (
-      <div className="bg-[#292929] min-h-screen flex flex-col p-4 relative">
+      <div className="bg-[#292929] h-screen flex flex-col relative overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-30"
           //style={{ backgroundImage: "url('/thai-temple.png')" }}
         />
 
-        <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full">
+        <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full px-4">
           {/* Header with decision title */}
-          <div className="pt-8 pb-6">
+          <div className="pt-8 pb-4 flex-shrink-0">
             <h1 className="text-white text-xl font-semibold text-center">{decisionTitle}</h1>
             <p className="text-neutral-400 text-sm text-center mt-2">Add your options</p>
           </div>
 
-          {/* Options list - grows upward, scrollable */}
-          <div className="flex-1 overflow-y-auto pb-4 md:pb-0">
-            <div className="flex flex-col gap-2">
-              {options.map((option, index) => (
-                <div
-                  key={index}
-                  className="bg-[#2c2c2c] border border-neutral-700 rounded-xl p-4 flex items-center justify-between"
-                >
-                  <span className="text-white text-sm">{option}</span>
-                  <button
-                    onClick={() => handleRemoveOption(index)}
-                    className="text-neutral-400 hover:text-white transition-colors"
+          {/* Options list - grows upward from input, scrollable */}
+          <div className="flex-1 overflow-y-auto pb-2">
+            <div className="flex flex-col gap-2 min-h-full justify-end">
+              {options.slice().reverse().map((option, reverseIndex) => {
+                const index = options.length - 1 - reverseIndex;
+                return (
+                  <div
+                    key={index}
+                    className="bg-[#2c2c2c] border border-neutral-700 rounded-xl p-4 flex items-center justify-between"
                   >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                  </button>
-                </div>
-              ))}
+                    <span className="text-white text-sm">{option}</span>
+                    <button
+                      onClick={() => handleRemoveOption(index)}
+                      className="text-neutral-400 hover:text-white transition-colors"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Input at bottom - fixed position */}
-          <div className="w-full fixed bottom-0 left-0 right-0 p-4 md:relative md:p-0 md:mt-4">
-            <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-4 flex flex-col gap-4 max-w-[402px] mx-auto">
+          {/* Input at bottom - moves with keyboard */}
+          <div className="flex-shrink-0 pt-2 pb-4 bg-[#292929]">
+            <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-4 flex flex-col gap-4">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAddOption()}
                 placeholder="Add an option..."
-                className="bg-transparent text-neutral-400 text-sm leading-5 outline-none placeholder:text-neutral-400 w-full"
+                className="bg-transparent text-neutral-400 text-base outline-none placeholder:text-neutral-400 w-full"
               />
 
               <div className="flex items-center justify-end">
@@ -637,12 +656,12 @@ export default function Home() {
         className="absolute inset-0 bg-cover bg-center opacity-30"
         //style={{ backgroundImage: "url('/thai-temple.png')" }}
       />
-      <div className="flex flex-col items-center md:justify-center flex-1 w-full max-w-[402px] relative z-10">
+      <div className="flex flex-col items-center justify-center flex-1 w-full max-w-[402px] relative z-10">
         <p className="text-neutral-400 text-sm leading-5 text-center mb-32 max-w-[259px] md:mb-8">
           &ldquo;ดี Dee&rdquo; Means good in Thai — Make better decisions with structure and
           clarity
         </p>
-
+        
         <div className="w-full fixed bottom-0 left-0 right-0 p-4 md:relative md:p-0">
           <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-4 flex flex-col gap-4 max-w-[402px] mx-auto">
             <input
