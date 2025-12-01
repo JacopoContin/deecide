@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import ConversationalEvaluation from "./components/ConversationalEvaluation";
+import ConversationalWeighing from "./components/ConversationalWeighing";
+import ManualEvaluation from "./components/ManualEvaluation";
 
 type Step = "input" | "options" | "criteria" | "evaluation" | "weighing" | "results";
 
@@ -23,13 +26,37 @@ export default function Home() {
   const [criteria, setCriteria] = useState<string[]>([]);
   const [scores, setScores] = useState<Score[]>([]);
   const [weights, setWeights] = useState<Weight[]>([]);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState("");
+  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
+  const [evaluationMode, setEvaluationMode] = useState<"conversational" | "manual">("conversational");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleStartDecision = () => {
+  const handleStartDecision = async () => {
     if (input.trim()) {
-      setDecisionTitle(input);
+      const title = input;
+      setDecisionTitle(title);
       setInput("");
       setStep("options");
+
+      // Fetch AI suggestions for options
+      setIsLoadingSuggestions(true);
+      try {
+        const response = await fetch("/api/ai/suggest", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ decisionTitle: title, type: "options" }),
+        });
+        const data = await response.json();
+        if (data.suggestions) {
+          setAiSuggestions(data.suggestions);
+        }
+      } catch (error) {
+        console.error("Failed to fetch AI suggestions:", error);
+      } finally {
+        setIsLoadingSuggestions(false);
+      }
     }
   };
 
@@ -40,8 +67,47 @@ export default function Home() {
     }
   };
 
+  const handleAddSuggestion = (suggestion: string, type: "option" | "criterion") => {
+    if (type === "option") {
+      if (!options.includes(suggestion)) {
+        setOptions([...options, suggestion]);
+      }
+    } else {
+      if (!criteria.includes(suggestion)) {
+        setCriteria([...criteria, suggestion]);
+      }
+    }
+  };
+
+  const isSuggestionAdded = (suggestion: string, type: "option" | "criterion") => {
+    return type === "option" ? options.includes(suggestion) : criteria.includes(suggestion);
+  };
+
   const handleRemoveOption = (index: number) => {
     setOptions(options.filter((_, i) => i !== index));
+  };
+
+  const handleMoveToCriteria = async () => {
+    setStep("criteria");
+
+    // Fetch AI suggestions for criteria
+    setIsLoadingSuggestions(true);
+    setAiSuggestions([]);
+    try {
+      const response = await fetch("/api/ai/suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decisionTitle, type: "criteria" }),
+      });
+      const data = await response.json();
+      if (data.suggestions) {
+        setAiSuggestions(data.suggestions);
+      }
+    } catch (error) {
+      console.error("Failed to fetch AI suggestions:", error);
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
   };
 
   const handleAddCriteria = () => {
@@ -157,6 +223,37 @@ export default function Home() {
     const winnerIndex = getWinningOptionIndex();
     const maxScore = getMaxScore();
 
+    // Fetch AI explanation when results load
+    useEffect(() => {
+      if (aiExplanation === "" && !isLoadingExplanation) {
+        setIsLoadingExplanation(true);
+        fetch("/api/ai/explain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            decisionTitle,
+            options,
+            criteria,
+            scores,
+            weights,
+            winnerIndex,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.explanation) {
+              setAiExplanation(data.explanation);
+            }
+          })
+          .catch((error) => {
+            console.error("Failed to fetch AI explanation:", error);
+          })
+          .finally(() => {
+            setIsLoadingExplanation(false);
+          });
+      }
+    }, []);
+
     return (
       <div className="bg-[#292929] min-h-screen flex flex-col p-4 relative">
         <div
@@ -179,6 +276,22 @@ export default function Home() {
               Score: {calculateWeightedScore(winnerIndex)} / {maxScore}
             </p>
           </div>
+
+          {/* AI Explanation */}
+          {(aiExplanation || isLoadingExplanation) && (
+            <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-6 mb-6">
+              <h3 className="text-white text-lg font-semibold mb-3">AI Analysis</h3>
+              {isLoadingExplanation ? (
+                <div className="flex space-x-2 justify-center py-4">
+                  <div className="w-2 h-2 bg-[#735cf6] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <div className="w-2 h-2 bg-[#735cf6] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <div className="w-2 h-2 bg-[#735cf6] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+              ) : (
+                <p className="text-neutral-300 text-sm leading-relaxed whitespace-pre-wrap">{aiExplanation}</p>
+              )}
+            </div>
+          )}
 
           {/* Results table */}
           <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-4 overflow-x-auto flex-1">
@@ -263,6 +376,8 @@ export default function Home() {
                   setCriteria([]);
                   setScores([]);
                   setWeights([]);
+                  setAiSuggestions([]);
+                  setAiExplanation("");
                 }}
                 className="flex-1 bg-[#735cf6] text-white py-3 px-4 rounded-xl hover:bg-[#6247e5] transition-colors text-sm font-medium"
               >
@@ -277,205 +392,44 @@ export default function Home() {
 
   if (step === "weighing") {
     return (
-      <div className="bg-[#292929] h-screen flex flex-col relative overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-30"
-          //style={{ backgroundImage: "url('/thai-temple.png')" }}
-        />
-
-        <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full px-4">
-          {/* Header */}
-          <div className="pt-8 pb-4 flex-shrink-0">
-            <h1 className="text-white text-2xl font-semibold text-center">{decisionTitle}</h1>
-            <p className="text-neutral-400 text-sm text-center mt-2">
-              How important is each criterion? ({weights.length}/{criteria.length})
-            </p>
-          </div>
-
-          {/* Weighing cards - Vertical carousel */}
-          <div className="flex-1 relative overflow-hidden">
-            {/* Top gradient */}
-            <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#292929] via-[#292929]/90 to-transparent z-10 pointer-events-none" />
-
-            {/* Bottom gradient */}
-            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-transparent via-[#292929]/90 to-[#292929] z-10 pointer-events-none" />
-
-            <div ref={scrollContainerRef} className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide">
-              {/* Spacer top */}
-              <div className="h-[150px] flex-shrink-0" />
-
-              {criteria.map((criterion, criterionIndex) => {
-                const currentWeight = getWeight(criterionIndex);
-
-                return (
-                  <div
-                    key={criterionIndex}
-                    data-card-index={criterionIndex}
-                    className="snap-center flex-shrink-0 mb-4"
-                  >
-                    <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-6">
-                      <div className="mb-4">
-                        <h3 className="text-white text-lg font-semibold mb-1">{criterion}</h3>
-                        <p className="text-neutral-400 text-sm">How important is this to you?</p>
-                      </div>
-
-                      {/* Weight legend */}
-                      <div className="flex justify-between mb-3 px-1">
-                        <span className="text-xs text-neutral-500">Not important</span>
-                        <span className="text-xs text-neutral-500">Very important</span>
-                      </div>
-
-                      {/* Weight buttons */}
-                      <div className="flex gap-2">
-                        {[1, 2, 3, 4, 5].map((weight) => (
-                          <button
-                            key={weight}
-                            onClick={() => handleWeight(criterionIndex, weight)}
-                            className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all ${
-                              currentWeight === weight
-                                ? "bg-[#735cf6] text-white"
-                                : "bg-neutral-700 text-neutral-300 hover:bg-neutral-600"
-                            }`}
-                          >
-                            {weight}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Spacer bottom */}
-              <div className="h-[150px] flex-shrink-0" />
-            </div>
-          </div>
-
-          {/* Navigation buttons */}
-          <div className="flex-shrink-0 pt-4 pb-4 bg-[#292929] border-t border-neutral-800 relative z-30">
-            <div className="flex gap-3">
-              <button
-                onClick={() => setStep("evaluation")}
-                className="flex-1 bg-neutral-700 text-white py-3 px-4 rounded-xl hover:bg-neutral-600 transition-colors text-sm font-medium shadow-lg"
-              >
-                Back
-              </button>
-              <button
-                onClick={() => setStep("results")}
-                disabled={weights.length < criteria.length}
-                className="flex-1 bg-[#735cf6] text-white py-3 px-4 rounded-xl hover:bg-[#6247e5] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-              >
-                See Results
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ConversationalWeighing
+        decisionTitle={decisionTitle}
+        criteria={criteria}
+        onWeight={handleWeight}
+        onComplete={() => setStep("results")}
+        onBack={() => setStep("evaluation")}
+      />
     );
   }
 
   if (step === "evaluation") {
-    const totalEvaluations = getTotalEvaluations();
-
-    return (
-      <div className="bg-[#292929] h-screen flex flex-col relative overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-30"
-          //style={{ backgroundImage: "url('/thai-temple.png')" }}
+    if (evaluationMode === "conversational") {
+      return (
+        <ConversationalEvaluation
+          decisionTitle={decisionTitle}
+          options={options}
+          criteria={criteria}
+          onScore={handleScore}
+          onComplete={() => setStep("weighing")}
+          onBack={() => setStep("criteria")}
+          currentScores={scores}
+          onSwitchMode={() => setEvaluationMode("manual")}
         />
-
-        <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full px-4">
-          {/* Header */}
-          <div className="pt-8 pb-4 flex-shrink-0">
-            <h1 className="text-white text-2xl font-semibold text-center">{decisionTitle}</h1>
-            <p className="text-neutral-400 text-sm text-center mt-2">
-              Score each option ({currentIndex}/{totalEvaluations})
-            </p>
-          </div>
-
-          {/* Evaluation cards - Vertical carousel */}
-          <div className="flex-1 relative overflow-hidden">
-            {/* Top gradient */}
-            <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-[#292929] via-[#292929]/90 to-transparent z-10 pointer-events-none" />
-
-            {/* Bottom gradient */}
-            <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-transparent via-[#292929]/90 to-[#292929] z-10 pointer-events-none" />
-
-            <div ref={scrollContainerRef} className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide">
-              {/* Spacer top */}
-              <div className="h-[150px] flex-shrink-0" />
-
-              {options.map((option, optionIndex) =>
-                criteria.map((criterion, criterionIndex) => {
-                  const linearIndex = optionIndex * criteria.length + criterionIndex;
-                  const currentScore = getScore(optionIndex, criterionIndex);
-
-                  return (
-                    <div
-                      key={`${optionIndex}-${criterionIndex}`}
-                      data-card-index={linearIndex}
-                      className="snap-center flex-shrink-0 mb-4"
-                    >
-                      <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-6">
-                        <div className="mb-4">
-                          <h3 className="text-white text-lg font-semibold mb-1">{option}</h3>
-                          <p className="text-neutral-400 text-sm">{criterion}</p>
-                        </div>
-
-                        {/* Score legend */}
-                        <div className="flex justify-between mb-3 px-1">
-                          <span className="text-xs text-neutral-500">Least desirable</span>
-                          <span className="text-xs text-neutral-500">Most desirable</span>
-                        </div>
-
-                        {/* Score buttons */}
-                        <div className="flex gap-2">
-                          {[1, 2, 3, 4, 5].map((score) => (
-                            <button
-                              key={score}
-                              onClick={() => handleScore(optionIndex, criterionIndex, score)}
-                              className={`flex-1 py-3 rounded-xl font-medium text-sm transition-all ${
-                                currentScore === score
-                                  ? "bg-[#735cf6] text-white"
-                                  : "bg-neutral-700 text-neutral-300 hover:bg-neutral-600"
-                              }`}
-                            >
-                              {score}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-
-              {/* Spacer bottom */}
-              <div className="h-[150px] flex-shrink-0" />
-            </div>
-          </div>
-
-          {/* Navigation buttons */}
-          <div className="flex-shrink-0 pt-4 pb-4 bg-[#292929] border-t border-neutral-800 relative z-30">
-            <div className="flex gap-3">
-              <button
-                onClick={() => setStep("criteria")}
-                className="flex-1 bg-neutral-700 text-white py-3 px-4 rounded-xl hover:bg-neutral-600 transition-colors text-sm font-medium shadow-lg"
-              >
-                Back
-              </button>
-              <button
-                onClick={() => setStep("weighing")}
-                disabled={scores.length < totalEvaluations}
-                className="flex-1 bg-[#735cf6] text-white py-3 px-4 rounded-xl hover:bg-[#6247e5] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+      );
+    } else {
+      return (
+        <ManualEvaluation
+          decisionTitle={decisionTitle}
+          options={options}
+          criteria={criteria}
+          scores={scores}
+          onScore={handleScore}
+          onComplete={() => setStep("weighing")}
+          onBack={() => setStep("criteria")}
+          onSwitchMode={() => setEvaluationMode("conversational")}
+        />
+      );
+    }
   }
 
   if (step === "criteria") {
@@ -496,6 +450,7 @@ export default function Home() {
           {/* Criteria list - grows upward from input, scrollable */}
           <div className="flex-1 overflow-y-auto pb-2">
             <div className="flex flex-col gap-2 min-h-full justify-end">
+              {/* User's criteria */}
               {criteria.slice().reverse().map((criterion, reverseIndex) => {
                 const index = criteria.length - 1 - reverseIndex;
                 return (
@@ -520,6 +475,42 @@ export default function Home() {
 
           {/* Input at bottom - moves with keyboard */}
           <div className="flex-shrink-0 pt-2 pb-4 bg-[#292929]">
+            {/* AI Suggestions Chips */}
+            {aiSuggestions.length > 0 && (
+              <div className="mb-3">
+                <p className="text-neutral-400 text-xs mb-2">AI suggestions - tap to add</p>
+                {isLoadingSuggestions ? (
+                  <div className="flex justify-center py-4">
+                    <div className="flex space-x-2">
+                      <div className="w-2 h-2 bg-[#735cf6] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <div className="w-2 h-2 bg-[#735cf6] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <div className="w-2 h-2 bg-[#735cf6] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {aiSuggestions.map((suggestion, index) => {
+                      const isAdded = isSuggestionAdded(suggestion, "criterion");
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleAddSuggestion(suggestion, "criterion")}
+                          disabled={isAdded}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                            isAdded
+                              ? "bg-[#735cf6] text-white cursor-default"
+                              : "bg-[#735cf6]/10 border border-[#735cf6]/30 text-[#735cf6] hover:bg-[#735cf6]/20"
+                          }`}
+                        >
+                          {suggestion} {isAdded && "✓"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-4 flex flex-col gap-4">
               <input
                 type="text"
@@ -542,8 +533,35 @@ export default function Home() {
               </div>
             </div>
 
+            {/* Evaluation mode toggle */}
+            <div className="mb-4">
+              <p className="text-neutral-400 text-xs mb-2 text-center">Choose evaluation method:</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setEvaluationMode("conversational")}
+                  className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-colors ${
+                    evaluationMode === "conversational"
+                      ? "bg-[#735cf6] text-white"
+                      : "bg-neutral-700 text-neutral-300 hover:bg-neutral-600"
+                  }`}
+                >
+                  💬 Chat
+                </button>
+                <button
+                  onClick={() => setEvaluationMode("manual")}
+                  className={`flex-1 py-2 px-3 rounded-xl text-sm font-medium transition-colors ${
+                    evaluationMode === "manual"
+                      ? "bg-[#735cf6] text-white"
+                      : "bg-neutral-700 text-neutral-300 hover:bg-neutral-600"
+                  }`}
+                >
+                  🎚️ Sliders
+                </button>
+              </div>
+            </div>
+
             {/* Navigation buttons */}
-            <div className="flex gap-3 mt-4 max-w-[402px] mx-auto">
+            <div className="flex gap-3 max-w-[402px] mx-auto">
               <button
                 onClick={() => setStep("options")}
                 className="flex-1 bg-neutral-700 text-white py-3 px-4 rounded-xl hover:bg-neutral-600 transition-colors text-sm font-medium"
@@ -582,6 +600,7 @@ export default function Home() {
           {/* Options list - grows upward from input, scrollable */}
           <div className="flex-1 overflow-y-auto pb-2">
             <div className="flex flex-col gap-2 min-h-full justify-end">
+              {/* User's options */}
               {options.slice().reverse().map((option, reverseIndex) => {
                 const index = options.length - 1 - reverseIndex;
                 return (
@@ -606,6 +625,42 @@ export default function Home() {
 
           {/* Input at bottom - moves with keyboard */}
           <div className="flex-shrink-0 pt-2 pb-4 bg-[#292929]">
+            {/* AI Suggestions Chips */}
+            {aiSuggestions.length > 0 && (
+              <div className="mb-3">
+                <p className="text-neutral-400 text-xs mb-2">AI suggestions - tap to add</p>
+                {isLoadingSuggestions ? (
+                  <div className="flex justify-center py-4">
+                    <div className="flex space-x-2">
+                      <div className="w-2 h-2 bg-[#735cf6] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <div className="w-2 h-2 bg-[#735cf6] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <div className="w-2 h-2 bg-[#735cf6] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {aiSuggestions.map((suggestion, index) => {
+                      const isAdded = isSuggestionAdded(suggestion, "option");
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleAddSuggestion(suggestion, "option")}
+                          disabled={isAdded}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                            isAdded
+                              ? "bg-[#735cf6] text-white cursor-default"
+                              : "bg-[#735cf6]/10 border border-[#735cf6]/30 text-[#735cf6] hover:bg-[#735cf6]/20"
+                          }`}
+                        >
+                          {suggestion} {isAdded && "✓"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="bg-[#2c2c2c] border border-neutral-700 rounded-2xl p-4 flex flex-col gap-4">
               <input
                 type="text"
@@ -637,7 +692,7 @@ export default function Home() {
                 Back
               </button>
               <button
-                onClick={() => setStep("criteria")}
+                onClick={handleMoveToCriteria}
                 disabled={options.length < 2}
                 className="flex-1 bg-[#735cf6] text-white py-3 px-4 rounded-xl hover:bg-[#6247e5] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
