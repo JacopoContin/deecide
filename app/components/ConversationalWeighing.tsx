@@ -56,7 +56,16 @@ export default function ConversationalWeighing({
         }),
       });
 
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log("Weight API response:", data);
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
       if (data.weights && Array.isArray(data.weights)) {
         // Apply all weights
@@ -67,7 +76,7 @@ export default function ConversationalWeighing({
         // Show confirmation with weights
         const weightSummary = data.weights
           .map((w: { criterionIndex: number; weight: number; reasoning: string }) =>
-            `• ${criteria[w.criterionIndex]}: ${w.weight}/5 - ${w.reasoning}`
+            `• ${criteria[w.criterionIndex]}: ${w.weight}/5${w.reasoning ? ` - ${w.reasoning}` : ''}`
           )
           .join('\n');
 
@@ -85,6 +94,8 @@ export default function ConversationalWeighing({
         setTimeout(() => {
           onComplete();
         }, 3000);
+      } else {
+        throw new Error("Invalid response format - missing weights array");
       }
     } catch (error) {
       console.error("Weight parsing error:", error);
@@ -92,7 +103,7 @@ export default function ConversationalWeighing({
         ...prev,
         {
           role: "assistant",
-          content: "Sorry, I had trouble understanding that. Could you tell me again which criteria are most important to you?",
+          content: `Sorry, I had trouble understanding that. Error: ${error instanceof Error ? error.message : 'Unknown error'}\n\nCould you tell me again which criteria are most important to you? Or try: "They're all equally important."`,
         },
       ]);
     } finally {
@@ -126,8 +137,21 @@ export default function ConversationalWeighing({
           />
         </div>
 
-        {/* Back button */}
+        {/* Action buttons */}
         <div className="flex-shrink-0 pt-2 pb-4 bg-[#292929]">
+          <button
+            onClick={() => {
+              // Set all weights to 3 (neutral) and proceed
+              criteria.forEach((_, index) => {
+                onWeight(index, 3);
+              });
+              onComplete();
+            }}
+            disabled={isComplete}
+            className="w-full mb-2 bg-[#735cf6]/20 text-[#735cf6] py-2 px-4 rounded-xl hover:bg-[#735cf6]/30 transition-colors text-xs font-medium disabled:opacity-50"
+          >
+            Skip - Weight All Equally
+          </button>
           <button
             onClick={onBack}
             disabled={isComplete}
