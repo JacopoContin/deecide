@@ -138,7 +138,7 @@ export default function ConversationalEvaluation({
         <div className="pt-8 pb-4 flex-shrink-0">
           <h1 className="text-white text-2xl font-semibold text-center">{decisionTitle}</h1>
           <p className="text-neutral-400 text-sm text-center mt-2">
-            Evaluating options ({currentEvaluationIndex}/{totalEvaluations})
+            Evaluating options ({currentEvaluationIndex + 1}/{totalEvaluations})
           </p>
         </div>
 

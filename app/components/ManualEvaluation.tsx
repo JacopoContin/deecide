@@ -72,7 +72,7 @@ export default function ManualEvaluation({
         <div className="pt-8 pb-4 flex-shrink-0">
           <h1 className="text-white text-2xl font-semibold text-center">{decisionTitle}</h1>
           <p className="text-neutral-400 text-sm text-center mt-2">
-            Score each option ({currentIndex}/{totalEvaluations})
+            Score each option ({Math.min(currentIndex + 1, totalEvaluations)}/{totalEvaluations})
           </p>
         </div>
 
