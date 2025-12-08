@@ -6,9 +6,15 @@ const openai = new OpenAI({
   baseURL: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
 });
 
+interface EvaluateRequest {
+  userMessage: string;
+  option: string;
+  criterion: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { userMessage, option, criterion } = await request.json();
+    const { userMessage, option, criterion } = await request.json() as EvaluateRequest;
 
     if (!userMessage || !option || !criterion) {
       return NextResponse.json(

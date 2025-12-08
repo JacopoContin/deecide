@@ -38,7 +38,7 @@ export default function ConversationalWeighing({
         },
       ]);
     }
-  }, []);
+  }, [criteria, messages.length]);
 
   const handleSendMessage = async (userMessage: string) => {
     // Add user message

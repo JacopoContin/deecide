@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import ConversationalEvaluation from "./components/ConversationalEvaluation";
 import ConversationalWeighing from "./components/ConversationalWeighing";
 import ManualEvaluation from "./components/ManualEvaluation";
@@ -135,18 +135,14 @@ export default function Home() {
     }
   };
 
-  const getScore = (optionIndex: number, criterionIndex: number): number | undefined => {
+  const getScore = useCallback((optionIndex: number, criterionIndex: number): number | undefined => {
     return scores.find(
       (s) => s.optionIndex === optionIndex && s.criterionIndex === criterionIndex
     )?.score;
-  };
+  }, [scores]);
 
   const getCurrentEvaluationIndex = () => {
     return scores.length;
-  };
-
-  const getTotalEvaluations = () => {
-    return options.length * criteria.length;
   };
 
   const handleWeight = (criterionIndex: number, weight: number) => {
@@ -161,11 +157,11 @@ export default function Home() {
     }
   };
 
-  const getWeight = (criterionIndex: number): number | undefined => {
+  const getWeight = useCallback((criterionIndex: number): number | undefined => {
     return weights.find((w) => w.criterionIndex === criterionIndex)?.weight;
-  };
+  }, [weights]);
 
-  const calculateWeightedScore = (optionIndex: number): number => {
+  const calculateWeightedScore = useCallback((optionIndex: number): number => {
     let totalScore = 0;
     criteria.forEach((_, criterionIndex) => {
       const score = getScore(optionIndex, criterionIndex) || 0;
@@ -173,13 +169,13 @@ export default function Home() {
       totalScore += score * weight;
     });
     return totalScore;
-  };
+  }, [criteria, getScore, getWeight]);
 
-  const getMaxScore = (): number => {
+  const getMaxScore = useCallback((): number => {
     return criteria.length * 5 * 5; // max score (5) * max weight (5) * number of criteria
-  };
+  }, [criteria.length]);
 
-  const getWinningOptionIndex = (): number => {
+  const getWinningOptionIndex = useCallback((): number => {
     let maxScore = -1;
     let winnerIndex = 0;
     options.forEach((_, optionIndex) => {
@@ -190,7 +186,7 @@ export default function Home() {
       }
     });
     return winnerIndex;
-  };
+  }, [options, calculateWeightedScore]);
 
   const currentIndex = getCurrentEvaluationIndex();
 
@@ -219,40 +215,41 @@ export default function Home() {
     }
   }, [currentIndex, weights.length, step]);
 
+  // Fetch AI explanation when results load
+  useEffect(() => {
+    if (step === "results" && aiExplanation === "" && !isLoadingExplanation) {
+      setIsLoadingExplanation(true);
+      const winnerIdx = getWinningOptionIndex();
+      fetch("/api/ai/explain", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          decisionTitle,
+          options,
+          criteria,
+          scores,
+          weights,
+          winnerIndex: winnerIdx,
+        }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.explanation) {
+            setAiExplanation(data.explanation);
+          }
+        })
+        .catch((error) => {
+          console.error("Failed to fetch AI explanation:", error);
+        })
+        .finally(() => {
+          setIsLoadingExplanation(false);
+        });
+    }
+  }, [step, aiExplanation, isLoadingExplanation, decisionTitle, options, criteria, scores, weights, getWinningOptionIndex]);
+
   if (step === "results") {
     const winnerIndex = getWinningOptionIndex();
     const maxScore = getMaxScore();
-
-    // Fetch AI explanation when results load
-    useEffect(() => {
-      if (aiExplanation === "" && !isLoadingExplanation) {
-        setIsLoadingExplanation(true);
-        fetch("/api/ai/explain", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            decisionTitle,
-            options,
-            criteria,
-            scores,
-            weights,
-            winnerIndex,
-          }),
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.explanation) {
-              setAiExplanation(data.explanation);
-            }
-          })
-          .catch((error) => {
-            console.error("Failed to fetch AI explanation:", error);
-          })
-          .finally(() => {
-            setIsLoadingExplanation(false);
-          });
-      }
-    }, []);
 
     return (
       <div className="bg-[#292929] min-h-screen flex flex-col p-4 relative">

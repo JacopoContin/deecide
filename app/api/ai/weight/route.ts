@@ -37,7 +37,7 @@ Return your response in JSON format with this structure:
   "summary": "Brief overall explanation of the weighting"
 }`;
 
-    const criteriaList = criteria.map((c: string, i: number) => `${i}. ${c}`).join('\n');
+    const criteriaList = criteria.map((c, i: number) => `${i}. ${c}`).join('\n');
 
     const userPrompt = `Criteria:\n${criteriaList}\n\nUser's preference: "${userMessage}"\n\nBased on what the user said, assign appropriate weights (1-5) to each criterion.`;
 
@@ -58,8 +58,14 @@ Return your response in JSON format with this structure:
 
     const parsedResponse = JSON.parse(responseText);
 
+    interface WeightItem {
+      criterionIndex: number;
+      weight: number;
+      reasoning?: string;
+    }
+
     // Validate weights are within range
-    const weights = parsedResponse.weights.map((w: any) => ({
+    const weights = parsedResponse.weights.map((w: WeightItem) => ({
       criterionIndex: w.criterionIndex,
       weight: Math.max(1, Math.min(5, w.weight || 3)),
       reasoning: w.reasoning || ""

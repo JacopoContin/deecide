@@ -6,9 +6,29 @@ const openai = new OpenAI({
   baseURL: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
 });
 
+interface Score {
+  optionIndex: number;
+  criterionIndex: number;
+  score: number;
+}
+
+interface Weight {
+  criterionIndex: number;
+  weight: number;
+}
+
+interface ExplainRequest {
+  decisionTitle: string;
+  options: string[];
+  criteria: string[];
+  scores: Score[];
+  weights: Weight[];
+  winnerIndex: number;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { decisionTitle, options, criteria, scores, weights, winnerIndex } = await request.json();
+    const { decisionTitle, options, criteria, scores, weights, winnerIndex } = await request.json() as ExplainRequest;
 
     if (!decisionTitle || !options || !criteria || !scores || !weights || winnerIndex === undefined) {
       return NextResponse.json(
@@ -22,14 +42,14 @@ export async function POST(request: NextRequest) {
 
     let decisionSummary = `Decision: ${decisionTitle}\n\n`;
     decisionSummary += `Winner: ${winner}\n\n`;
-    decisionSummary += `Options evaluated:\n${options.map((opt: string, i: number) => `${i + 1}. ${opt}`).join('\n')}\n\n`;
-    decisionSummary += `Criteria used:\n${criteria.map((crit: string, i: number) => `${i + 1}. ${crit} (weight: ${weights.find((w: any) => w.criterionIndex === i)?.weight || 1})`).join('\n')}\n\n`;
+    decisionSummary += `Options evaluated:\n${options.map((opt, i: number) => `${i + 1}. ${opt}`).join('\n')}\n\n`;
+    decisionSummary += `Criteria used:\n${criteria.map((crit, i: number) => `${i + 1}. ${crit} (weight: ${weights.find((w) => w.criterionIndex === i)?.weight || 1})`).join('\n')}\n\n`;
 
     decisionSummary += `Scores:\n`;
-    options.forEach((option: string, optIdx: number) => {
+    options.forEach((option, optIdx: number) => {
       decisionSummary += `\n${option}:\n`;
-      criteria.forEach((criterion: string, critIdx: number) => {
-        const score = scores.find((s: any) => s.optionIndex === optIdx && s.criterionIndex === critIdx)?.score || 0;
+      criteria.forEach((criterion, critIdx: number) => {
+        const score = scores.find((s) => s.optionIndex === optIdx && s.criterionIndex === critIdx)?.score || 0;
         decisionSummary += `  - ${criterion}: ${score}/5\n`;
       });
     });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ChatInterface from "./ChatInterface";
 
 type Message = {
@@ -26,7 +26,6 @@ export default function ConversationalEvaluation({
   onScore,
   onComplete,
   onBack,
-  currentScores,
   onSwitchMode,
 }: ConversationalEvaluationProps) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -36,11 +35,11 @@ export default function ConversationalEvaluation({
   const totalEvaluations = options.length * criteria.length;
 
   // Calculate current option and criterion
-  const getCurrentPair = (index: number) => {
+  const getCurrentPair = useCallback((index: number) => {
     const optionIndex = Math.floor(index / criteria.length);
     const criterionIndex = index % criteria.length;
     return { optionIndex, criterionIndex };
-  };
+  }, [criteria.length]);
 
   // Initialize first question
   useEffect(() => {
@@ -53,7 +52,7 @@ export default function ConversationalEvaluation({
         },
       ]);
     }
-  }, []);
+  }, [currentEvaluationIndex, criteria, getCurrentPair, messages.length, options]);
 
   const handleSendMessage = async (userMessage: string) => {
     // Add user message
