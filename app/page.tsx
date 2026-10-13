@@ -45,7 +45,7 @@ export default function Home() {
   const [optionSuggestions, setOptionSuggestions] = useState<string[]>([]);
   const [criteriaSuggestions, setCriteriaSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [inputMode, setInputMode] = useState<InputMode>("conversational");
+  const [inputMode, setInputMode] = useState<InputMode>("manual");
 
   const handleStartDecision = async () => {
     const title = titleInput.trim();
@@ -206,11 +206,11 @@ export default function Home() {
                   }}
                   className="grid w-full grid-cols-2"
                 >
-                  <ToggleGroupItem value="conversational">
-                    <ChatIcon data-icon="inline-start" /> Chat with AI
-                  </ToggleGroupItem>
                   <ToggleGroupItem value="manual">
                     <SettingsIcon data-icon="inline-start" /> Tap to score
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="conversational">
+                    <ChatIcon data-icon="inline-start" /> Chat with AI
                   </ToggleGroupItem>
                 </ToggleGroup>
               </div>
@@ -219,6 +219,7 @@ export default function Home() {
         }
       >
         <ListBuilder
+          key="criteria"
           items={criteria}
           onAdd={addCriterion}
           onRemove={removeCriterion}
@@ -246,6 +247,7 @@ export default function Home() {
         }
       >
         <ListBuilder
+          key="options"
           items={options}
           onAdd={addOption}
           onRemove={removeOption}

@@ -63,7 +63,14 @@ export default function ChatInterface({
             if (!disabled) onSendMessage(text);
           }}
         >
-          <PromptInputTextarea placeholder={placeholder} disabled={disabled} />
+          <PromptInputTextarea
+            placeholder={placeholder}
+            disabled={disabled}
+            onKeyDown={(e) => {
+              // ⌘/Ctrl + Enter is the "next step" shortcut, so it must not also send the message
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) e.preventDefault();
+            }}
+          />
           <PromptInputToolbar className="pt-0">
             <PromptInputTools />
             <PromptInputSubmit {...(disabled ? { disabled: true } : {})} />

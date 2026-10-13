@@ -1,13 +1,15 @@
 "use client";
 
 import { Fragment } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ChatIcon } from "@/lib/icons";
 import { DEFAULT_WEIGHT, type Weight } from "@/lib/decision";
 import StepLayout from "./StepLayout";
 import NavFooter from "./NavFooter";
+import WeightLegend from "./WeightLegend";
 import WeightScale from "./WeightScale";
 
 type ManualWeighingProps = {
@@ -31,18 +33,19 @@ export default function ManualWeighing({
 }: ManualWeighingProps) {
   const getWeight = (criterionIndex: number) => weights.find((w) => w.criterionIndex === criterionIndex)?.weight;
   const weighted = criteria.filter((_, i) => getWeight(i) !== undefined).length;
+  const done = weighted === criteria.length;
 
   return (
     <StepLayout
       title={decisionTitle}
-      subtitle={`How important is each criterion? ${weighted}/${criteria.length} set`}
+      subtitle={`Rate how important each criterion is · ${weighted}/${criteria.length} done`}
       stepIndex={3}
       footer={
         <NavFooter
           onBack={onBack}
           onNext={onComplete}
           nextLabel="See results"
-          nextDisabled={weighted < criteria.length}
+          nextDisabled={!done}
           extra={
             onSwitchMode && (
               <Button variant="ghost" onClick={onSwitchMode} className="self-center text-muted-foreground">
@@ -53,36 +56,46 @@ export default function ManualWeighing({
         />
       }
     >
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-semibold">Importance</CardTitle>
-          <CardDescription>1 = not important · 5 = extremely important</CardDescription>
-          <CardAction>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => criteria.forEach((_, index) => onWeight(index, DEFAULT_WEIGHT))}
-            >
-              Weigh all equally
-            </Button>
-          </CardAction>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          {criteria.map((criterion, criterionIndex) => (
-            <Fragment key={criterionIndex}>
-              {criterionIndex > 0 && <Separator />}
-              <div className="flex flex-col gap-2">
-                <p className="text-sm font-medium">{criterion}</p>
-                <WeightScale
-                  label={`Importance of ${criterion}`}
-                  value={getWeight(criterionIndex)}
-                  onChange={(value) => onWeight(criterionIndex, value)}
-                />
-              </div>
-            </Fragment>
-          ))}
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-4">
+        <WeightLegend />
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold">Importance</CardTitle>
+            <CardAction>
+              <Badge
+                variant="secondary"
+                className={done ? "bg-success/15 text-success-foreground tabular-nums" : "tabular-nums"}
+              >
+                {weighted}/{criteria.length}
+              </Badge>
+            </CardAction>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            {criteria.map((criterion, criterionIndex) => (
+              <Fragment key={criterionIndex}>
+                {criterionIndex > 0 && <Separator />}
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium">{criterion}</p>
+                  <WeightScale
+                    label={`Importance of ${criterion}`}
+                    value={getWeight(criterionIndex)}
+                    onChange={(value) => onWeight(criterionIndex, value)}
+                  />
+                </div>
+              </Fragment>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Button
+          variant="outline"
+          onClick={() => criteria.forEach((_, index) => onWeight(index, DEFAULT_WEIGHT))}
+          className="self-center"
+        >
+          Weigh all equally
+        </Button>
+      </div>
     </StepLayout>
   );
 }
