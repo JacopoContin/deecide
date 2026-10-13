@@ -2,10 +2,8 @@
 
 import { Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ChatIcon } from "@/lib/icons";
 import type { Score } from "@/lib/decision";
 import StepLayout from "./StepLayout";
 import NavFooter from "./NavFooter";
@@ -20,7 +18,6 @@ type ManualEvaluationProps = {
   onScore: (optionIndex: number, criterionIndex: number, score: number) => void;
   onComplete: () => void;
   onBack: () => void;
-  onSwitchMode?: () => void;
 };
 
 export default function ManualEvaluation({
@@ -31,7 +28,6 @@ export default function ManualEvaluation({
   onScore,
   onComplete,
   onBack,
-  onSwitchMode,
 }: ManualEvaluationProps) {
   const getScore = (optionIndex: number, criterionIndex: number) =>
     scores.find((s) => s.optionIndex === optionIndex && s.criterionIndex === criterionIndex)?.score;
@@ -49,13 +45,6 @@ export default function ManualEvaluation({
           onBack={onBack}
           onNext={onComplete}
           nextDisabled={completed < totalEvaluations}
-          extra={
-            onSwitchMode && (
-              <Button variant="ghost" onClick={onSwitchMode} className="self-center text-muted-foreground">
-                <ChatIcon data-icon="inline-start" /> Describe in chat instead
-              </Button>
-            )
-          }
         />
       }
     >
