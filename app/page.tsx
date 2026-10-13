@@ -184,7 +184,7 @@ export default function Home() {
 
   return (
     <div className="relative isolate flex h-dvh flex-col overflow-hidden pt-[var(--safe-top)] pb-[var(--safe-bottom)]">
-      <AmbientBackground variant="mesh" grain={0.4} />
+      <AmbientBackground variant="mesh" intensity={0.1} grain={0.4} />
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-8 px-4 py-8">
         <div className="flex flex-col items-center gap-4 text-center">
           <VoiceOrb size={112} glow={0.4} aria-hidden />
