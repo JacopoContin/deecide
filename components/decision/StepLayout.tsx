@@ -3,8 +3,8 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
-
-export const STEPS = ["Options", "Criteria", "Evaluate", "Weigh", "Results"] as const;
+import { STEPS } from "@/lib/decision";
+import HowItWorksPanel, { HowItWorksButton } from "./HowItWorks";
 
 type StepLayoutProps = {
   title: string;
@@ -31,31 +31,37 @@ export default function StepLayout({
   const container = cn("mx-auto w-full px-4", width === "wide" ? "max-w-5xl" : "max-w-xl");
 
   return (
-    <div className="flex h-dvh flex-col pt-[var(--safe-top)]">
-      <header className="shrink-0 border-b">
-        <div className={cn(container, "pt-4 pb-3")}>
-          {stepIndex !== undefined && (
-            <div className="mb-3 flex flex-col gap-2">
-              <p className="text-xs font-medium text-muted-foreground">
-                Step {stepIndex + 1} of {STEPS.length} · {STEPS[stepIndex]}
-              </p>
-              <Progress value={((stepIndex + 1) / STEPS.length) * 100} aria-label="Decision progress" />
-            </div>
-          )}
-          <h1 className="font-heading text-xl font-semibold break-words sm:text-2xl">{title}</h1>
-          {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
-        </div>
-      </header>
+    <div className="flex h-dvh">
+      <div className="flex min-w-0 flex-1 flex-col pt-[var(--safe-top)]">
+        <header className="shrink-0 border-b">
+          <div className={cn(container, "pt-4 pb-3")}>
+            {stepIndex !== undefined && (
+              <div className="mb-3 flex flex-col gap-2">
+                <div className="-my-1 flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Step {stepIndex + 1} of {STEPS.length} · {STEPS[stepIndex]}
+                  </p>
+                  <HowItWorksButton className="-mr-2" />
+                </div>
+                <Progress value={((stepIndex + 1) / STEPS.length) * 100} aria-label="Decision progress" />
+              </div>
+            )}
+            <h1 className="font-heading text-xl font-semibold break-words sm:text-2xl">{title}</h1>
+            {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+          </div>
+        </header>
 
-      <main className={cn("min-h-0 flex-1", fixedBody ? "flex flex-col" : "overflow-y-auto")}>
-        <div className={cn(container, fixedBody ? "flex min-h-0 flex-1 flex-col" : "py-4")}>{children}</div>
-      </main>
+        <main className={cn("min-h-0 flex-1", fixedBody ? "flex flex-col" : "overflow-y-auto")}>
+          <div className={cn(container, fixedBody ? "flex min-h-0 flex-1 flex-col" : "py-4")}>{children}</div>
+        </main>
 
-      {footer && (
-        <footer className="shrink-0 border-t bg-background pb-[var(--safe-bottom)]">
-          <div className={cn(container, "py-3")}>{footer}</div>
-        </footer>
-      )}
+        {footer && (
+          <footer className="shrink-0 border-t bg-background pb-[var(--safe-bottom)]">
+            <div className={cn(container, "py-3")}>{footer}</div>
+          </footer>
+        )}
+      </div>
+      {stepIndex !== undefined && <HowItWorksPanel stepIndex={stepIndex} />}
     </div>
   );
 }

@@ -37,6 +37,7 @@ export {
   Terminal as TerminalIcon,
   Menu as MenuIcon,
   Info as InfoIcon,
+  CircleQuestionMark as HelpIcon,
   Plus as AddIcon,
   Globe as WebSearchIcon,
   Telescope as ResearchIcon,

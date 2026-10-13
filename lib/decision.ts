@@ -1,3 +1,5 @@
+export const STEPS = ["Options", "Criteria", "Evaluate", "Weigh", "Results"] as const;
+
 export type Score = {
   optionIndex: number;
   criterionIndex: number;
