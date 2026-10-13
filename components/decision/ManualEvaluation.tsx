@@ -59,7 +59,7 @@ export default function ManualEvaluation({
 
           return (
             <Card key={optionIndex}>
-              <CardHeader>
+              <CardHeader className="items-center">
                 <CardTitle className="text-lg font-semibold break-words">{option}</CardTitle>
                 <CardAction>
                   <Badge
@@ -70,12 +70,12 @@ export default function ManualEvaluation({
                   </Badge>
                 </CardAction>
               </CardHeader>
-              <CardContent className="flex flex-col gap-4">
+              <CardContent className="flex flex-col gap-5">
                 {criteria.map((criterion, criterionIndex) => (
                   <Fragment key={criterionIndex}>
                     {criterionIndex > 0 && <Separator />}
-                    <div className="flex flex-col gap-2">
-                      <p className="text-sm font-medium">{criterion}</p>
+                    <div className="flex flex-col gap-2.5">
+                      <p className="text-sm font-medium break-words">{criterion}</p>
                       <ScoreScale
                         label={`${option} — ${criterion}`}
                         value={getScore(optionIndex, criterionIndex)}
