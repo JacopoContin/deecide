@@ -3,8 +3,8 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
-
-export const STEPS = ["Options", "Criteria", "Evaluate", "Weigh", "Results"] as const;
+import { STEPS } from "@/lib/decision";
+import HowItWorks from "./HowItWorks";
 
 type StepLayoutProps = {
   title: string;
@@ -36,9 +36,12 @@ export default function StepLayout({
         <div className={cn(container, "pt-4 pb-3")}>
           {stepIndex !== undefined && (
             <div className="mb-3 flex flex-col gap-2">
-              <p className="text-xs font-medium text-muted-foreground">
-                Step {stepIndex + 1} of {STEPS.length} · {STEPS[stepIndex]}
-              </p>
+              <div className="-my-1 flex items-center justify-between gap-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Step {stepIndex + 1} of {STEPS.length} · {STEPS[stepIndex]}
+                </p>
+                <HowItWorks stepIndex={stepIndex} className="-mr-2" />
+              </div>
               <Progress value={((stepIndex + 1) / STEPS.length) * 100} aria-label="Decision progress" />
             </div>
           )}
