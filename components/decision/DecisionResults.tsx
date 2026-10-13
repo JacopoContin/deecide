@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Shimmer } from "@/components/ai/shimmer";
 import { ChevronDownIcon, SparkleIcon, WinnerIcon } from "@/lib/icons";
 import { DEFAULT_WEIGHT, MAX_SCORE, MIN_SCORE, formatSigned } from "@/lib/decision";
 import StepLayout from "./StepLayout";
@@ -20,8 +19,6 @@ type DecisionResultsProps = {
   criteria: string[];
   getScore: (optionIndex: number, criterionIndex: number) => number | undefined;
   getWeight: (criterionIndex: number) => number | undefined;
-  aiExplanation: string;
-  isLoadingExplanation: boolean;
   onBack: () => void;
   onRestart: () => void;
 };
@@ -32,8 +29,6 @@ export default function DecisionResults({
   criteria,
   getScore,
   getWeight,
-  aiExplanation,
-  isLoadingExplanation,
   onBack,
   onRestart,
 }: DecisionResultsProps) {
@@ -83,23 +78,18 @@ export default function DecisionResults({
           </p>
         </Card>
 
-        {/* AI analysis */}
-        {(aiExplanation || isLoadingExplanation) && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <SparkleIcon className="size-4 text-primary" /> AI analysis
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingExplanation ? (
-                <Shimmer>Analysing your results…</Shimmer>
-              ) : (
-                <p className="leading-relaxed whitespace-pre-wrap text-muted-foreground">{aiExplanation}</p>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        {/* AI analysis: switched off until the explain endpoint works again */}
+        <Card className="bg-muted/30">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-muted-foreground">
+              <SparkleIcon className="size-4" /> AI analysis
+            </CardTitle>
+            <CardDescription>A written explanation of why this option came out on top.</CardDescription>
+            <CardAction>
+              <Badge variant="secondary">Coming soon</Badge>
+            </CardAction>
+          </CardHeader>
+        </Card>
 
         {/* Ranking: works on every screen size, with a per-option breakdown */}
         <section className="flex flex-col gap-2">
