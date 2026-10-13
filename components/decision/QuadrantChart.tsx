@@ -2,8 +2,8 @@
 
 import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRightIcon, ArrowUpIcon, InfoIcon } from "@/lib/icons";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowRightIcon, ArrowUpIcon } from "@/lib/icons";
 import { MAX_SCORE, MIN_SCORE, formatSigned } from "@/lib/decision";
 
 export type RankedOption = {
@@ -53,48 +53,12 @@ function AxisValues({ x, y }: { x: number; y: number }) {
   );
 }
 
-function AxisTitle({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
+function AxisTitle({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <p className="flex flex-wrap items-center justify-center gap-x-1.5 text-center text-xs">
-      <span className="inline-flex items-center gap-1 font-medium">
-        {icon} {title}
-      </span>
-      <span className="text-muted-foreground">· {detail}</span>
+    <p className="flex items-center justify-center gap-1 text-center text-xs text-muted-foreground">
+      {icon} {label}
     </p>
   );
-}
-
-type Point = RankedOption & { x: number; y: number };
-
-// Averages closer than this are treated as equal, so rounding noise never triggers a note
-const EPSILON = 0.05;
-
-// When the winner isn't top right, say which trade-off it makes; null when it leads on both axes (or it's a tie)
-function tradeOffNote(points: Point[], xLabel: string): string | null {
-  const winners = points.filter((p) => p.isWinner);
-  if (winners.length !== 1) return null;
-  const [winner] = winners;
-  const others = points.filter((p) => !p.isWinner);
-  const best = (axis: "x" | "y") =>
-    others.reduce<Point | null>((top, p) => (p[axis] > (top?.[axis] ?? -Infinity) ? p : top), null);
-
-  const yRival = best("y");
-  const xRival = best("x");
-  const beatenOnY = yRival && yRival.y > winner.y + EPSILON ? yRival : null;
-  const beatenOnX = xRival && xRival.x > winner.x + EPSILON ? xRival : null;
-
-  if (beatenOnY && beatenOnX) {
-    return beatenOnY === beatenOnX
-      ? `${winner.option} wins overall, even though ${beatenOnY.option} scores higher on both axes here.`
-      : `${winner.option} wins on balance: ${beatenOnY.option} leads on your top priorities and ${beatenOnX.option} on ${xLabel}.`;
-  }
-  if (beatenOnX) {
-    return `${winner.option} wins on your top priorities but gives up some ground on ${xLabel}, where ${beatenOnX.option} does better.`;
-  }
-  if (beatenOnY) {
-    return `${winner.option} wins thanks to ${xLabel}, while ${beatenOnY.option} does better on your top priorities.`;
-  }
-  return null;
 }
 
 export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: QuadrantChartProps) {
@@ -128,21 +92,10 @@ export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: 
 
   const axisLabel = (criteriaOnAxis: number[]) => criteriaOnAxis.map((ci) => criteria[ci]).join(" + ");
 
-  // Prose list for the note: "Food", "Food and Price", "Food, Price and Location"
-  const xNames = xCriteria.map((ci) => criteria[ci]);
-  const xProse = xNames.length > 1 ? `${xNames.slice(0, -1).join(", ")} and ${xNames.at(-1)}` : xNames[0];
-  const note = tradeOffNote(points, xProse);
-
   const active = placed.find((p) => p.optionIndex === activeIndex);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="font-semibold">Trade-off map</CardTitle>
-        <CardDescription>
-          Your top priorities against everything else. Options in the top right are strong on both.
-        </CardDescription>
-      </CardHeader>
       <CardContent className="flex flex-col gap-5">
         {/* Chart */}
         <figure className="flex flex-col gap-2">
@@ -152,8 +105,7 @@ export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: 
 
           <AxisTitle
             icon={<ArrowUpIcon className="size-3 shrink-0" />}
-            title="Top priorities"
-            detail={axisLabel(yCriteria)}
+            label={axisLabel(yCriteria)}
           />
 
           <div className="flex items-stretch gap-2">
@@ -254,18 +206,10 @@ export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: 
             </div>
             <AxisTitle
               icon={<ArrowRightIcon className="size-3 shrink-0" />}
-              title="Everything else"
-              detail={axisLabel(xCriteria)}
+              label={axisLabel(xCriteria)}
             />
           </div>
         </figure>
-
-        {note && (
-          <p className="flex items-start gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
-            <InfoIcon className="mt-0.5 size-4 shrink-0" />
-            <span>{note}</span>
-          </p>
-        )}
 
         {/* Legend: identity comes from the number, never colour alone */}
         <ol className="grid grid-cols-1 gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2 lg:grid-cols-3">
@@ -280,13 +224,9 @@ export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: 
                 {p.rank}
               </span>
               <span className="min-w-0 flex-1 break-words">{p.option}</span>
-              <span className="text-xs">
-                <AxisValues x={p.x} y={p.y} />
-              </span>
             </li>
           ))}
         </ol>
-
       </CardContent>
     </Card>
   );
