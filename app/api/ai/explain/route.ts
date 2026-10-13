@@ -40,14 +40,14 @@ export async function POST(request: NextRequest) {
     let decisionSummary = `Decision: ${decisionTitle}\n\n`;
     decisionSummary += `Winner: ${winner}\n\n`;
     decisionSummary += `Options evaluated:\n${options.map((opt, i: number) => `${i + 1}. ${opt}`).join('\n')}\n\n`;
-    decisionSummary += `Criteria used:\n${criteria.map((crit, i: number) => `${i + 1}. ${crit} (weight: ${weights.find((w) => w.criterionIndex === i)?.weight || 1})`).join('\n')}\n\n`;
+    decisionSummary += `Criteria used:\n${criteria.map((crit, i: number) => `${i + 1}. ${crit} (importance weight: ${weights.find((w) => w.criterionIndex === i)?.weight ?? 3}/5)`).join('\n')}\n\n`;
 
-    decisionSummary += `Scores:\n`;
+    decisionSummary += `Scores (-1 = detrimental, 0 = neutral, +1 = positive, +2 = very positive):\n`;
     options.forEach((option, optIdx: number) => {
       decisionSummary += `\n${option}:\n`;
       criteria.forEach((criterion, critIdx: number) => {
-        const score = scores.find((s) => s.optionIndex === optIdx && s.criterionIndex === critIdx)?.score || 0;
-        decisionSummary += `  - ${criterion}: ${score}/5\n`;
+        const score = scores.find((s) => s.optionIndex === optIdx && s.criterionIndex === critIdx)?.score ?? 0;
+        decisionSummary += `  - ${criterion}: ${score > 0 ? `+${score}` : score}\n`;
       });
     });
 

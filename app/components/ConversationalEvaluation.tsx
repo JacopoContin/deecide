@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import ChatInterface from "./ChatInterface";
-
-type Message = {
-  role: "user" | "assistant";
-  content: string;
-};
+import { useState } from "react";
+import { Button, Flex, Text } from "@radix-ui/themes";
+import { MixerHorizontalIcon } from "@radix-ui/react-icons";
+import ChatInterface, { type Message } from "./ChatInterface";
+import StepLayout from "./StepLayout";
+import NavFooter from "./NavFooter";
+import { SCORE_SCALE, formatSigned, getScoreLevel } from "../lib/decision";
 
 type ConversationalEvaluationProps = {
   decisionTitle: string;
@@ -15,9 +15,12 @@ type ConversationalEvaluationProps = {
   onScore: (optionIndex: number, criterionIndex: number, score: number) => void;
   onComplete: () => void;
   onBack: () => void;
-  currentScores: Array<{ optionIndex: number; criterionIndex: number; score: number }>;
   onSwitchMode?: () => void;
 };
+
+const scaleHint = SCORE_SCALE.map((level) => `${formatSigned(level.value)} ${level.label.toLowerCase()}`).join(
+  " · "
+);
 
 export default function ConversationalEvaluation({
   decisionTitle,
@@ -28,41 +31,61 @@ export default function ConversationalEvaluation({
   onBack,
   onSwitchMode,
 }: ConversationalEvaluationProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [currentEvaluationIndex, setCurrentEvaluationIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
-
   const totalEvaluations = options.length * criteria.length;
 
-  // Calculate current option and criterion
-  const getCurrentPair = useCallback((index: number) => {
-    const optionIndex = Math.floor(index / criteria.length);
-    const criterionIndex = index % criteria.length;
-    return { optionIndex, criterionIndex };
-  }, [criteria.length]);
+  const getPair = (index: number) => ({
+    optionIndex: Math.floor(index / criteria.length),
+    criterionIndex: index % criteria.length,
+  });
 
-  // Initialize first question
-  useEffect(() => {
-    if (messages.length === 0) {
-      const { optionIndex, criterionIndex } = getCurrentPair(currentEvaluationIndex);
-      setMessages([
-        {
-          role: "assistant",
-          content: `Let's evaluate "${options[optionIndex]}" based on "${criteria[criterionIndex]}".\n\nHow would you rate this? Feel free to describe in your own words.`,
-        },
-      ]);
-    }
-  }, [currentEvaluationIndex, criteria, getCurrentPair, messages.length, options]);
+  const askAbout = (index: number) => {
+    const { optionIndex, criterionIndex } = getPair(index);
+    return `How does "${options[optionIndex]}" affect "${criteria[criterionIndex]}"?\n\nDescribe it in your own words, or tap a score below.`;
+  };
+
+  const [messages, setMessages] = useState<Message[]>(() => [
+    {
+      role: "assistant",
+      content: `Let's score each option. The scale is:\n${scaleHint}\n\n${askAbout(0)}`,
+    },
+  ]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const isComplete = currentIndex >= totalEvaluations;
+
+  const recordScore = (score: number, reasoning?: string) => {
+    const { optionIndex, criterionIndex } = getPair(currentIndex);
+    onScore(optionIndex, criterionIndex, score);
+
+    const level = getScoreLevel(score);
+    const scored = `Scored ${formatSigned(score)} (${level?.label ?? "Neutral"}).${reasoning ? ` ${reasoning}` : ""}`;
+    const nextIndex = currentIndex + 1;
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content:
+          nextIndex < totalEvaluations
+            ? `${scored}\n\nNext: ${askAbout(nextIndex)}`
+            : `${scored}\n\nAll evaluations complete! Continue to weigh your criteria.`,
+      },
+    ]);
+    setCurrentIndex(nextIndex);
+  };
+
+  const handleQuickScore = (score: number) => {
+    const level = getScoreLevel(score);
+    setMessages((prev) => [...prev, { role: "user", content: `${formatSigned(score)} ${level?.label}` }]);
+    recordScore(score);
+  };
 
   const handleSendMessage = async (userMessage: string) => {
-    // Add user message
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
 
     try {
-      const { optionIndex, criterionIndex } = getCurrentPair(currentEvaluationIndex);
-
-      // Call AI to parse evaluation
+      const { optionIndex, criterionIndex } = getPair(currentIndex);
       const response = await fetch("/api/ai/evaluate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -74,51 +97,18 @@ export default function ConversationalEvaluation({
       });
 
       const data = await response.json();
-
-      if (data.score) {
-        // Record the score
-        onScore(optionIndex, criterionIndex, data.score);
-
-        // Move to next evaluation
-        const nextIndex = currentEvaluationIndex + 1;
-
-        if (nextIndex < totalEvaluations) {
-          // Ask next question
-          const { optionIndex: nextOptIdx, criterionIndex: nextCritIdx } =
-            getCurrentPair(nextIndex);
-
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: `Got it! Scored ${data.score}/5. ${data.reasoning || ""}\n\nNext: Let's evaluate "${options[nextOptIdx]}" based on "${criteria[nextCritIdx]}".\n\nHow would you rate this?`,
-            },
-          ]);
-
-          setCurrentEvaluationIndex(nextIndex);
-        } else {
-          // All done
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: `Perfect! Scored ${data.score}/5. ${data.reasoning || ""}\n\nAll evaluations complete! Ready to move to weighting.`,
-            },
-          ]);
-
-          // Auto-advance after a short delay
-          setTimeout(() => {
-            onComplete();
-          }, 2000);
-        }
+      if (!response.ok || typeof data.score !== "number") {
+        throw new Error(data.error || "Invalid response");
       }
+
+      recordScore(data.score, data.reasoning);
     } catch (error) {
       console.error("Evaluation error:", error);
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: "Sorry, I had trouble understanding that. Could you rephrase your evaluation?",
+          content: "Sorry, I had trouble understanding that. Could you rephrase, or tap one of the scores below?",
         },
       ]);
     } finally {
@@ -127,49 +117,55 @@ export default function ConversationalEvaluation({
   };
 
   return (
-    <div className="bg-[#292929] h-screen flex flex-col relative overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-30"
-        //style={{ backgroundImage: "url('/thai-temple.png')" }}
+    <StepLayout
+      title={decisionTitle}
+      subtitle={`Evaluating options · ${Math.min(currentIndex, totalEvaluations)}/${totalEvaluations} scored`}
+      stepIndex={2}
+      fixedBody
+      footer={
+        <NavFooter
+          onBack={onBack}
+          onNext={onComplete}
+          nextDisabled={!isComplete}
+          extra={
+            onSwitchMode && (
+              <Button variant="ghost" color="gray" size="2" onClick={onSwitchMode} className="self-center">
+                <MixerHorizontalIcon /> Score with buttons instead
+              </Button>
+            )
+          }
+        />
+      }
+    >
+      <ChatInterface
+        messages={messages}
+        onSendMessage={handleSendMessage}
+        placeholder={isComplete ? "All done!" : "e.g. it's great for this…"}
+        isLoading={isLoading}
+        disabled={isComplete}
+        quickReplies={
+          !isComplete && (
+            <Flex gap="2" align="center" wrap="wrap">
+              <Text size="1" color="gray">
+                Quick score:
+              </Text>
+              {SCORE_SCALE.map((level) => (
+                <Button
+                  key={level.value}
+                  size="1"
+                  variant="soft"
+                  color={level.color}
+                  disabled={isLoading}
+                  onClick={() => handleQuickScore(level.value)}
+                  title={level.label}
+                >
+                  {formatSigned(level.value)} {level.label}
+                </Button>
+              ))}
+            </Flex>
+          )
+        }
       />
-
-      <div className="relative z-10 flex flex-col h-full max-w-[402px] mx-auto w-full px-4">
-        {/* Header */}
-        <div className="pt-8 pb-4 flex-shrink-0">
-          <h1 className="text-white text-2xl font-semibold text-center">{decisionTitle}</h1>
-          <p className="text-neutral-400 text-sm text-center mt-2">
-            Evaluating options ({currentEvaluationIndex + 1}/{totalEvaluations})
-          </p>
-        </div>
-
-        {/* Chat area */}
-        <div className="flex-1 overflow-hidden">
-          <ChatInterface
-            messages={messages}
-            onSendMessage={handleSendMessage}
-            placeholder="Type your evaluation..."
-            isLoading={isLoading}
-          />
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex-shrink-0 pt-2 pb-4 bg-[#292929]">
-          {onSwitchMode && (
-            <button
-              onClick={onSwitchMode}
-              className="w-full mb-2 bg-neutral-800 text-neutral-300 py-2 px-4 rounded-xl hover:bg-neutral-700 transition-colors text-xs font-medium"
-            >
-              Switch to Slider Mode 🎚️
-            </button>
-          )}
-          <button
-            onClick={onBack}
-            className="w-full bg-neutral-700 text-white py-3 px-4 rounded-xl hover:bg-neutral-600 transition-colors text-sm font-medium"
-          >
-            Back to Criteria
-          </button>
-        </div>
-      </div>
-    </div>
+    </StepLayout>
   );
 }

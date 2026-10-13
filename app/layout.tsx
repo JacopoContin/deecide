@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import "@radix-ui/themes/styles.css";
+import { Theme } from "@radix-ui/themes";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -35,7 +35,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <Theme appearance="dark" accentColor="violet" grayColor="mauve" radius="large" scaling="100%">
+          {children}
+        </Theme>
       </body>
     </html>
   );
