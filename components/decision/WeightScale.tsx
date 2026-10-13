@@ -9,7 +9,8 @@ const levels: ScaleLevel[] = WEIGHT_SCALE.map((level) => ({
   label: level.label,
   description: level.description,
   className:
-    "border-primary/25 bg-primary/5 text-muted-foreground hover:bg-primary/15 hover:text-foreground data-pressed:border-primary data-pressed:bg-primary data-pressed:text-primary-foreground",
+    // Neutral at rest like the score scale, filled with the primary colour once chosen
+    "border-border bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground data-pressed:border-primary data-pressed:bg-primary data-pressed:text-primary-foreground",
 }));
 
 type WeightScaleProps = {
