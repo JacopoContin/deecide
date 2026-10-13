@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { VoiceOrb } from "@/components/voice/voice-orb";
+import { AmbientBackground } from "@/components/effects/ambient-background";
 import ManualEvaluation from "@/components/decision/ManualEvaluation";
 import ManualWeighing from "@/components/decision/ManualWeighing";
 import DecisionResults from "@/components/decision/DecisionResults";
@@ -182,7 +183,8 @@ export default function Home() {
   }
 
   return (
-    <div className="flex h-dvh flex-col pt-[var(--safe-top)] pb-[var(--safe-bottom)]">
+    <div className="relative isolate flex h-dvh flex-col overflow-hidden pt-[var(--safe-top)] pb-[var(--safe-bottom)]">
+      <AmbientBackground variant="mesh" grain={0.4} />
       <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-8 px-4 py-8">
         <div className="flex flex-col items-center gap-4 text-center">
           <VoiceOrb size={112} glow={0.4} aria-hidden />
