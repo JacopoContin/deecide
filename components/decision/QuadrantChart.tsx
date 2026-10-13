@@ -1,13 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ArrowRightIcon, ArrowUpIcon } from "@/lib/icons";
 import { MAX_SCORE, MIN_SCORE, formatSigned } from "@/lib/decision";
-
-type Axis = "y" | "x";
 
 export type RankedOption = {
   option: string;
@@ -23,9 +20,14 @@ type QuadrantChartProps = {
   weightOf: (criterionIndex: number) => number;
 };
 
-// Default split: the first half of the criteria on the vertical axis, the rest on the horizontal one
-const defaultAxes = (count: number): Axis[] =>
-  Array.from({ length: count }, (_, i) => (i < Math.ceil(count / 2) ? "y" : "x"));
+// Opinionated split: the most important half of the criteria goes up, everything else goes right.
+// Ties keep the order the user entered them in.
+const splitByImportance = (count: number, weightOf: (criterionIndex: number) => number) => {
+  const byWeight = Array.from({ length: count }, (_, i) => i).sort((a, b) => weightOf(b) - weightOf(a) || a - b);
+  const top = byWeight.slice(0, Math.ceil(count / 2)).sort((a, b) => a - b);
+  const rest = byWeight.slice(Math.ceil(count / 2)).sort((a, b) => a - b);
+  return { yCriteria: top, xCriteria: rest };
+};
 
 // Inset the scale so dots at -1 or +2 sit inside the plot instead of on its edge
 const PLOT_INSET = 8;
@@ -51,15 +53,23 @@ function AxisValues({ x, y }: { x: number; y: number }) {
   );
 }
 
+function AxisTitle({ icon, title, detail }: { icon: ReactNode; title: string; detail: string }) {
+  return (
+    <p className="flex flex-wrap items-center justify-center gap-x-1.5 text-center text-xs">
+      <span className="inline-flex items-center gap-1 font-medium">
+        {icon} {title}
+      </span>
+      <span className="text-muted-foreground">· {detail}</span>
+    </p>
+  );
+}
+
 export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: QuadrantChartProps) {
-  const [axes, setAxes] = useState<Axis[]>(() => defaultAxes(criteria.length));
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   if (criteria.length < 2) return null;
 
-  const onAxis = (axis: Axis) => criteria.map((_, i) => i).filter((i) => axes[i] === axis);
-  const yCriteria = onAxis("y");
-  const xCriteria = onAxis("x");
+  const { yCriteria, xCriteria } = splitByImportance(criteria.length, weightOf);
 
   // Weighted average of the option's scores on the criteria assigned to an axis (-1 … +2)
   const axisValue = (optionIndex: number, criteriaOnAxis: number[]) => {
@@ -85,15 +95,6 @@ export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: 
 
   const axisLabel = (criteriaOnAxis: number[]) => criteriaOnAxis.map((ci) => criteria[ci]).join(" + ");
 
-  const moveCriterion = (criterionIndex: number, axis: Axis) => {
-    setAxes((prev) => {
-      const next = [...prev];
-      next[criterionIndex] = axis;
-      // Each axis needs at least one criterion
-      return next.includes("x") && next.includes("y") ? next : prev;
-    });
-  };
-
   const active = placed.find((p) => p.optionIndex === activeIndex);
 
   return (
@@ -101,19 +102,21 @@ export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: 
       <CardHeader>
         <CardTitle className="font-semibold">Trade-off map</CardTitle>
         <CardDescription>
-          Each option&apos;s weighted average on two groups of criteria. Top right helps on both.
+          Your top priorities against everything else. Options in the top right are strong on both.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
         {/* Chart */}
         <figure className="flex flex-col gap-2">
           <figcaption className="sr-only">
-            Options plotted by {axisLabel(yCriteria)} (vertical) against {axisLabel(xCriteria)} (horizontal)
+            {`Options plotted by top priorities (${axisLabel(yCriteria)}, vertical) against everything else (${axisLabel(xCriteria)}, horizontal)`}
           </figcaption>
 
-          <p className="flex items-center justify-center gap-1 text-center text-xs font-medium">
-            <ArrowUpIcon className="size-3 shrink-0 text-muted-foreground" /> {axisLabel(yCriteria)}
-          </p>
+          <AxisTitle
+            icon={<ArrowUpIcon className="size-3 shrink-0" />}
+            title="Top priorities"
+            detail={axisLabel(yCriteria)}
+          />
 
           <div className="flex items-stretch gap-2">
             {/* Vertical axis ticks */}
@@ -125,7 +128,7 @@ export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: 
                 0
               </span>
               <span className="absolute right-0 translate-y-1/2" style={{ bottom: `${percentOnScale(MIN_SCORE)}%` }}>
-                {MIN_SCORE}
+                {formatSigned(MIN_SCORE)}
               </span>
             </div>
 
@@ -202,7 +205,7 @@ export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: 
           <div className="ml-8 flex flex-col gap-1">
             <div className="relative h-4 text-[11px] text-muted-foreground tabular-nums">
               <span className="absolute -translate-x-1/2" style={{ left: `${percentOnScale(MIN_SCORE)}%` }}>
-                {MIN_SCORE}
+                {formatSigned(MIN_SCORE)}
               </span>
               <span className="absolute -translate-x-1/2" style={{ left: `${ZERO}%` }}>
                 0
@@ -211,9 +214,11 @@ export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: 
                 {formatSigned(MAX_SCORE)}
               </span>
             </div>
-            <p className="flex items-center justify-center gap-1 text-center text-xs font-medium">
-              {axisLabel(xCriteria)} <ArrowRightIcon className="size-3 shrink-0 text-muted-foreground" />
-            </p>
+            <AxisTitle
+              icon={<ArrowRightIcon className="size-3 shrink-0" />}
+              title="Everything else"
+              detail={axisLabel(xCriteria)}
+            />
           </div>
         </figure>
 
@@ -237,36 +242,6 @@ export default function QuadrantChart({ ranking, criteria, scoreOf, weightOf }: 
           ))}
         </ol>
 
-        {/* Axis assignment */}
-        <div className="flex flex-col gap-2 border-t pt-4">
-          <p className="text-xs font-medium text-muted-foreground">Which axis does each criterion count towards?</p>
-          {criteria.map((criterion, ci) => {
-            const isOnlyOne = (axes[ci] === "y" ? yCriteria : xCriteria).length === 1;
-            return (
-              <div key={ci} className="flex items-center justify-between gap-3">
-                <span className="min-w-0 text-sm break-words">{criterion}</span>
-                <ToggleGroup
-                  aria-label={`Axis for ${criterion}`}
-                  variant="outline"
-                  size="sm"
-                  spacing={0}
-                  value={[axes[ci]]}
-                  onValueChange={(next) => {
-                    if (next.length > 0) moveCriterion(ci, next[next.length - 1] as Axis);
-                  }}
-                  className="shrink-0"
-                >
-                  <ToggleGroupItem value="y" disabled={axes[ci] !== "y" && isOnlyOne} aria-label="Vertical axis">
-                    <ArrowUpIcon data-icon="inline-start" /> Vertical
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="x" disabled={axes[ci] !== "x" && isOnlyOne} aria-label="Horizontal axis">
-                    <ArrowRightIcon data-icon="inline-start" /> Horizontal
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
-            );
-          })}
-        </div>
       </CardContent>
     </Card>
   );
