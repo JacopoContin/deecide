@@ -8,7 +8,6 @@ import type { Score } from "@/lib/decision";
 import StepLayout from "./StepLayout";
 import NavFooter from "./NavFooter";
 import ScoreScale from "./ScoreScale";
-import ScoreLegend from "./ScoreLegend";
 
 type ManualEvaluationProps = {
   decisionTitle: string;
@@ -49,8 +48,6 @@ export default function ManualEvaluation({
       }
     >
       <div className="flex flex-col gap-4">
-        <ScoreLegend />
-
         {options.map((option, optionIndex) => {
           const scoredForOption = criteria.filter(
             (_, criterionIndex) => getScore(optionIndex, criterionIndex) !== undefined

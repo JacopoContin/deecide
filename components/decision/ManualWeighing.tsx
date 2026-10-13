@@ -8,7 +8,6 @@ import { Separator } from "@/components/ui/separator";
 import { DEFAULT_WEIGHT, type Weight } from "@/lib/decision";
 import StepLayout from "./StepLayout";
 import NavFooter from "./NavFooter";
-import WeightLegend from "./WeightLegend";
 import WeightScale from "./WeightScale";
 
 type ManualWeighingProps = {
@@ -47,8 +46,6 @@ export default function ManualWeighing({
       }
     >
       <div className="flex flex-col gap-4">
-        <WeightLegend />
-
         <Card>
           <CardHeader className="items-center">
             <CardTitle className="text-lg font-semibold">Importance</CardTitle>
