@@ -12,11 +12,15 @@ import {
   ScoreIllustration,
   WeighIllustration,
 } from "./GuideIllustrations";
+import ScoreLegend from "./ScoreLegend";
+import WeightLegend from "./WeightLegend";
 
 type StepGuide = {
   title: string;
   body: string;
   Illustration: ComponentType<SVGProps<SVGSVGElement>>;
+  // Reference for the step's tap scale, if it has one
+  Legend?: ComponentType;
 };
 
 // One entry per STEPS item, in the same order
@@ -34,11 +38,13 @@ const GUIDE: StepGuide[] = [
   {
     title: "Score each option",
     Illustration: ScoreIllustration,
+    Legend: ScoreLegend,
     body: "Scoring one cell at a time turns one big gut call into small, honest judgements that are easier to make.",
   },
   {
     title: "Weigh your criteria",
     Illustration: WeighIllustration,
+    Legend: WeightLegend,
     body: "Weights reflect what matters most to you, so a deal-breaker counts for more than a nice-to-have.",
   },
   {
@@ -99,6 +105,7 @@ function GuideBody({ stepIndex, docked }: { stepIndex: number; docked: boolean }
         <guide.Illustration className="size-full" />
       </div>
       <Body className="text-sm leading-relaxed text-muted-foreground">{guide.body}</Body>
+      {guide.Legend && <guide.Legend />}
     </div>
   );
 }
