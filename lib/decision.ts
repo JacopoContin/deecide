@@ -32,6 +32,20 @@ export const MIN_WEIGHT = 1;
 export const MAX_WEIGHT = 5;
 export const DEFAULT_WEIGHT = 3;
 
+export type WeightLevel = {
+  value: number;
+  label: string;
+  description: string;
+};
+
+export const WEIGHT_SCALE: WeightLevel[] = [
+  { value: 1, label: "Not", description: "Not important" },
+  { value: 2, label: "Low", description: "Slightly important" },
+  { value: 3, label: "Medium", description: "Moderately important" },
+  { value: 4, label: "High", description: "Very important" },
+  { value: 5, label: "Critical", description: "Extremely important" },
+];
+
 export const getScoreLevel = (score: number | undefined) =>
   SCORE_SCALE.find((level) => level.value === score);
 

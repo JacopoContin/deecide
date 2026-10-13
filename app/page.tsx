@@ -7,6 +7,7 @@ import { VoiceOrb } from "@/components/voice/voice-orb";
 import ConversationalEvaluation from "@/components/decision/ConversationalEvaluation";
 import ConversationalWeighing from "@/components/decision/ConversationalWeighing";
 import ManualEvaluation from "@/components/decision/ManualEvaluation";
+import ManualWeighing from "@/components/decision/ManualWeighing";
 import DecisionResults from "@/components/decision/DecisionResults";
 import ListBuilder from "@/components/decision/ListBuilder";
 import StepLayout from "@/components/decision/StepLayout";
@@ -15,7 +16,8 @@ import { ArrowRightIcon, ChatIcon, SettingsIcon } from "@/lib/icons";
 import { DEFAULT_WEIGHT, type Score, type Weight } from "@/lib/decision";
 
 type Step = "input" | "options" | "criteria" | "evaluation" | "weighing" | "results";
-type EvaluationMode = "conversational" | "manual";
+// How the user scores options and weighs criteria: chatting with the AI or tapping buttons
+type InputMode = "conversational" | "manual";
 
 async function fetchSuggestions(decisionTitle: string, type: "options" | "criteria"): Promise<string[]> {
   try {
@@ -45,7 +47,7 @@ export default function Home() {
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [aiExplanation, setAiExplanation] = useState("");
   const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
-  const [evaluationMode, setEvaluationMode] = useState<EvaluationMode>("conversational");
+  const [inputMode, setInputMode] = useState<InputMode>("conversational");
 
   const handleStartDecision = async () => {
     const title = titleInput.trim();
@@ -194,15 +196,22 @@ export default function Home() {
   }
 
   if (step === "weighing") {
-    return (
+    const weighingProps = {
+      decisionTitle,
+      criteria,
+      onWeight: handleWeight,
+      onComplete: () => setStep("results"),
+      onBack: () => setStep("evaluation"),
+    };
+
+    return inputMode === "conversational" ? (
       <ConversationalWeighing
-        decisionTitle={decisionTitle}
-        criteria={criteria}
-        onWeight={handleWeight}
-        onComplete={() => setStep("results")}
-        onBack={() => setStep("evaluation")}
+        {...weighingProps}
         alreadyWeighted={weights.length === criteria.length}
+        onSwitchMode={() => setInputMode("manual")}
       />
+    ) : (
+      <ManualWeighing {...weighingProps} weights={weights} onSwitchMode={() => setInputMode("conversational")} />
     );
   }
 
@@ -216,13 +225,13 @@ export default function Home() {
       onBack: () => setStep("criteria"),
     };
 
-    return evaluationMode === "conversational" ? (
-      <ConversationalEvaluation {...evaluationProps} onSwitchMode={() => setEvaluationMode("manual")} />
+    return inputMode === "conversational" ? (
+      <ConversationalEvaluation {...evaluationProps} onSwitchMode={() => setInputMode("manual")} />
     ) : (
       <ManualEvaluation
         {...evaluationProps}
         scores={scores}
-        onSwitchMode={() => setEvaluationMode("conversational")}
+        onSwitchMode={() => setInputMode("conversational")}
       />
     );
   }
@@ -240,14 +249,14 @@ export default function Home() {
             nextDisabled={criteria.length < 1}
             extra={
               <div className="flex flex-col gap-1.5">
-                <p className="text-xs text-muted-foreground">How do you want to score?</p>
+                <p className="text-xs text-muted-foreground">How do you want to score and weigh?</p>
                 <ToggleGroup
                   aria-label="Scoring method"
                   variant="outline"
                   spacing={2}
-                  value={[evaluationMode]}
+                  value={[inputMode]}
                   onValueChange={(next) => {
-                    if (next.length > 0) setEvaluationMode(next[next.length - 1] as EvaluationMode);
+                    if (next.length > 0) setInputMode(next[next.length - 1] as InputMode);
                   }}
                   className="grid w-full grid-cols-2"
                 >
