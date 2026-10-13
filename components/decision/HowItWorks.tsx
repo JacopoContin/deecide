@@ -5,13 +5,11 @@ import { useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
-import { STEPS } from "@/lib/decision";
 import { CloseIcon, HelpIcon } from "@/lib/icons";
 
 type StepGuide = {
   title: string;
-  description: string;
-  why: string;
+  body: string;
   // Path under /public; a placeholder is shown until one is set
   illustration?: string;
 };
@@ -20,28 +18,23 @@ type StepGuide = {
 const GUIDE: StepGuide[] = [
   {
     title: "Add your options",
-    description: "List the options you want to compare. You'll score each one against your criteria in the next steps.",
-    why: "Seeing every option side by side keeps you from comparing a favourite against a vague “something else”. Add as many as you like, at least two.",
+    body: "List what you're choosing between, side by side, so nothing gets judged against a vague \u201csomething else\u201d.",
   },
   {
     title: "Choose your criteria",
-    description: "Add the things that matter for this decision, like cost, time or how it feels.",
-    why: "Agreeing on criteria up front means every option is judged by the same yardstick, not by whatever comes to mind first.",
+    body: "Name what matters, like cost or time, so every option is judged by the same yardstick.",
   },
   {
     title: "Score each option",
-    description: "Rate how each option does on each criterion, from −1 (works against it) to +2 (excels at it).",
-    why: "Small judgements made one at a time are easier to make honestly than one big gut call.",
+    body: "Rate each option on each criterion, from \u22121 to +2. Small judgements are easier to make honestly.",
   },
   {
     title: "Weigh your criteria",
-    description: "Rate how important each criterion is, from 1 (not important) to 5 (critical).",
-    why: "Not everything matters equally. Weights let a deal-breaker count for more than a nice-to-have.",
+    body: "Rate each criterion from 1 to 5, so a deal-breaker counts for more than a nice-to-have.",
   },
   {
     title: "Read your results",
-    description: "Each score is multiplied by its criterion's weight and added up. The highest total wins.",
-    why: "You can see where each option gained or lost points. If the winner feels wrong, a criterion may be missing or a weight off, so go back and adjust.",
+    body: "Scores \u00d7 weights, added up. If the winner feels wrong, a criterion or weight is probably off.",
   },
 ];
 
@@ -85,17 +78,12 @@ export function HowItWorksButton({ className }: { className?: string }) {
 function GuideBody({ stepIndex, docked }: { stepIndex: number; docked: boolean }) {
   const guide = GUIDE[stepIndex];
   const Title = docked ? "h2" : SheetTitle;
-  const Description = docked ? "p" : SheetDescription;
+  const Body = docked ? "p" : SheetDescription;
 
   return (
-    <div className="flex flex-col px-6 pt-14 pb-8">
-      <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-        Step {stepIndex + 1} of {STEPS.length}
-      </p>
-      <Title className="mt-2 font-heading text-2xl font-semibold text-foreground">{guide.title}</Title>
-      <Description className="mt-3 text-sm leading-relaxed text-muted-foreground">{guide.description}</Description>
-
-      <div className="relative my-8 aspect-[4/3] overflow-hidden rounded-xl">
+    <div className="flex flex-col gap-6 px-6 pt-14 pb-8">
+      <Title className="sr-only">{guide.title}</Title>
+      <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
         {guide.illustration ? (
           <Image src={guide.illustration} alt="" fill sizes="384px" className="object-contain" />
         ) : (
@@ -104,9 +92,7 @@ function GuideBody({ stepIndex, docked }: { stepIndex: number; docked: boolean }
           </div>
         )}
       </div>
-
-      <h3 className="font-heading text-base font-semibold text-foreground">Why this is important</h3>
-      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{guide.why}</p>
+      <Body className="text-sm leading-relaxed text-muted-foreground">{guide.body}</Body>
     </div>
   );
 }
