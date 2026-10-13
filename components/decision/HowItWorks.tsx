@@ -1,39 +1,49 @@
 "use client";
 
-import Image from "next/image";
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore, type ComponentType, type SVGProps } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import { CloseIcon, HelpIcon } from "@/lib/icons";
+import {
+  CriteriaIllustration,
+  OptionsIllustration,
+  ResultsIllustration,
+  ScoreIllustration,
+  WeighIllustration,
+} from "./GuideIllustrations";
 
 type StepGuide = {
   title: string;
   body: string;
-  // Path under /public; a placeholder is shown until one is set
-  illustration?: string;
+  Illustration: ComponentType<SVGProps<SVGSVGElement>>;
 };
 
 // One entry per STEPS item, in the same order
 const GUIDE: StepGuide[] = [
   {
     title: "Add your options",
+    Illustration: OptionsIllustration,
     body: "A weighted decision matrix compares options side by side. Listing them first keeps every alternative on equal footing.",
   },
   {
     title: "Choose your criteria",
+    Illustration: CriteriaIllustration,
     body: "Criteria are the matrix's columns. Fixing them up front means every option is judged by the same yardstick.",
   },
   {
     title: "Score each option",
+    Illustration: ScoreIllustration,
     body: "Scoring one cell at a time turns one big gut call into small, honest judgements that are easier to make.",
   },
   {
     title: "Weigh your criteria",
+    Illustration: WeighIllustration,
     body: "Weights reflect what matters most to you, so a deal-breaker counts for more than a nice-to-have.",
   },
   {
     title: "Read your results",
+    Illustration: ResultsIllustration,
     body: "Each score is multiplied by its weight and summed. The highest total is the option that best fits your priorities.",
   },
 ];
@@ -83,14 +93,8 @@ function GuideBody({ stepIndex, docked }: { stepIndex: number; docked: boolean }
   return (
     <div className="flex flex-col gap-6 px-6 pt-14 pb-8">
       <Title className="sr-only">{guide.title}</Title>
-      <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
-        {guide.illustration ? (
-          <Image src={guide.illustration} alt="" fill sizes="384px" className="object-contain" />
-        ) : (
-          <div className="flex size-full items-center justify-center rounded-xl border border-dashed text-xs text-muted-foreground">
-            Illustration
-          </div>
-        )}
+      <div className="aspect-[4/3] rounded-xl bg-muted/40">
+        <guide.Illustration className="size-full" />
       </div>
       <Body className="text-sm leading-relaxed text-muted-foreground">{guide.body}</Body>
     </div>
