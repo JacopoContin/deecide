@@ -18,23 +18,23 @@ type StepGuide = {
 const GUIDE: StepGuide[] = [
   {
     title: "Add your options",
-    body: "List what you're choosing between, side by side, so nothing gets judged against a vague \u201csomething else\u201d.",
+    body: "A weighted decision matrix compares options side by side. Listing them first keeps every alternative on equal footing.",
   },
   {
     title: "Choose your criteria",
-    body: "Name what matters, like cost or time, so every option is judged by the same yardstick.",
+    body: "Criteria are the matrix's columns. Fixing them up front means every option is judged by the same yardstick.",
   },
   {
     title: "Score each option",
-    body: "Rate each option on each criterion, from \u22121 to +2. Small judgements are easier to make honestly.",
+    body: "Scoring one cell at a time turns one big gut call into small, honest judgements that are easier to make.",
   },
   {
     title: "Weigh your criteria",
-    body: "Rate each criterion from 1 to 5, so a deal-breaker counts for more than a nice-to-have.",
+    body: "Weights reflect what matters most to you, so a deal-breaker counts for more than a nice-to-have.",
   },
   {
     title: "Read your results",
-    body: "Scores \u00d7 weights, added up. If the winner feels wrong, a criterion or weight is probably off.",
+    body: "Each score is multiplied by its weight and summed. The highest total is the option that best fits your priorities.",
   },
 ];
 
