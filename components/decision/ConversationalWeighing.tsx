@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Suggestion, Suggestions } from "@/components/ai/suggestions";
+import { SettingsIcon } from "@/lib/icons";
 import { DEFAULT_WEIGHT, MAX_WEIGHT, MIN_WEIGHT } from "@/lib/decision";
 import ChatInterface, { type ChatMessage } from "./ChatInterface";
 import StepLayout from "./StepLayout";
@@ -15,6 +17,7 @@ type ConversationalWeighingProps = {
   onBack: () => void;
   // True when returning to this step with weights already set
   alreadyWeighted?: boolean;
+  onSwitchMode?: () => void;
 };
 
 export default function ConversationalWeighing({
@@ -24,6 +27,7 @@ export default function ConversationalWeighing({
   onComplete,
   onBack,
   alreadyWeighted = false,
+  onSwitchMode,
 }: ConversationalWeighingProps) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
@@ -106,6 +110,13 @@ export default function ConversationalWeighing({
           onNext={onComplete}
           nextLabel="See results"
           nextDisabled={!hasWeights || isLoading}
+          extra={
+            onSwitchMode && (
+              <Button variant="ghost" onClick={onSwitchMode} className="self-center text-muted-foreground">
+                <SettingsIcon data-icon="inline-start" /> Weigh with buttons instead
+              </Button>
+            )
+          }
         />
       }
     >

@@ -1,6 +1,7 @@
 export {
   ArrowUp as SendIcon,
   ArrowRight as ArrowRightIcon,
+  ArrowUp as ArrowUpIcon,
   Square as StopIcon,
   Paperclip as AttachIcon,
   X as CloseIcon,

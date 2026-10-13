@@ -12,6 +12,7 @@ import { DEFAULT_WEIGHT, MAX_SCORE, MIN_SCORE, formatSigned } from "@/lib/decisi
 import StepLayout from "./StepLayout";
 import NavFooter from "./NavFooter";
 import ScoreBadge from "./ScoreBadge";
+import QuadrantChart from "./QuadrantChart";
 
 type DecisionResultsProps = {
   decisionTitle: string;
@@ -165,6 +166,13 @@ export default function DecisionResults({
             })}
           </ol>
         </section>
+
+        <QuadrantChart
+          ranking={ranking.map((r, rank) => ({ ...r, rank: rank + 1, isWinner: r.total === topScore }))}
+          criteria={criteria}
+          scoreOf={scoreOf}
+          weightOf={weightOf}
+        />
 
         {/* Full matrix: only on larger screens, where a wide table fits */}
         <section className="hidden flex-col gap-2 sm:flex">
