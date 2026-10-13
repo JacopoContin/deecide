@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader } from "@/components/ui/empty";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
-import { Suggestion, Suggestions } from "@/components/ai/suggestions";
-import { AddIcon, CheckIcon, CloseIcon, SparkleIcon } from "@/lib/icons";
+import { AddIcon, CloseIcon } from "@/lib/icons";
 
 type ListBuilderProps = {
   items: string[];
@@ -15,8 +14,6 @@ type ListBuilderProps = {
   onRemove: (index: number) => void;
   placeholder: string;
   emptyText: string;
-  suggestions: string[];
-  isLoadingSuggestions: boolean;
 };
 
 export default function ListBuilder({
@@ -25,8 +22,6 @@ export default function ListBuilder({
   onRemove,
   placeholder,
   emptyText,
-  suggestions,
-  isLoadingSuggestions,
 }: ListBuilderProps) {
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -65,36 +60,6 @@ export default function ListBuilder({
           </InputGroupAddon>
         </InputGroup>
       </form>
-
-      {!isLoadingSuggestions && suggestions.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-            <SparkleIcon className="size-3.5 text-primary" />
-            Suggestions · tap to add
-          </p>
-          <Suggestions>
-            {suggestions.map((suggestion) => {
-              const isAdded = items.includes(suggestion);
-              return (
-                <Suggestion
-                  key={suggestion}
-                  suggestion={suggestion}
-                  onSelect={onAdd}
-                  disabled={isAdded}
-                  className={
-                    isAdded
-                      ? "h-auto min-h-7 border-primary/40 bg-primary/10 py-1 text-left whitespace-normal text-primary disabled:opacity-100"
-                      : "h-auto min-h-7 py-1 text-left whitespace-normal"
-                  }
-                >
-                  {isAdded ? <CheckIcon data-icon="inline-start" /> : <AddIcon data-icon="inline-start" />}
-                  {suggestion}
-                </Suggestion>
-              );
-            })}
-          </Suggestions>
-        </div>
-      )}
 
       {items.length === 0 ? (
         <Empty className="border border-dashed py-8">

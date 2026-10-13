@@ -2,37 +2,17 @@
 
 import { useState, useCallback } from "react";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { VoiceOrb } from "@/components/voice/voice-orb";
-import ConversationalEvaluation from "@/components/decision/ConversationalEvaluation";
-import ConversationalWeighing from "@/components/decision/ConversationalWeighing";
 import ManualEvaluation from "@/components/decision/ManualEvaluation";
 import ManualWeighing from "@/components/decision/ManualWeighing";
 import DecisionResults from "@/components/decision/DecisionResults";
 import ListBuilder from "@/components/decision/ListBuilder";
 import StepLayout from "@/components/decision/StepLayout";
 import NavFooter from "@/components/decision/NavFooter";
-import { ArrowRightIcon, ChatIcon, SettingsIcon } from "@/lib/icons";
+import { ArrowRightIcon } from "@/lib/icons";
 import type { Score, Weight } from "@/lib/decision";
 
 type Step = "input" | "options" | "criteria" | "evaluation" | "weighing" | "results";
-// How the user scores options and weighs criteria: chatting with the AI or tapping buttons
-type InputMode = "conversational" | "manual";
-
-async function fetchSuggestions(decisionTitle: string, type: "options" | "criteria"): Promise<string[]> {
-  try {
-    const response = await fetch("/api/ai/suggest", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ decisionTitle, type }),
-    });
-    const data = await response.json();
-    return Array.isArray(data.suggestions) ? data.suggestions : [];
-  } catch (error) {
-    console.error("Failed to fetch AI suggestions:", error);
-    return [];
-  }
-}
 
 export default function Home() {
   const [step, setStep] = useState<Step>("input");
@@ -42,31 +22,14 @@ export default function Home() {
   const [criteria, setCriteria] = useState<string[]>([]);
   const [scores, setScores] = useState<Score[]>([]);
   const [weights, setWeights] = useState<Weight[]>([]);
-  const [optionSuggestions, setOptionSuggestions] = useState<string[]>([]);
-  const [criteriaSuggestions, setCriteriaSuggestions] = useState<string[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [inputMode, setInputMode] = useState<InputMode>("manual");
 
-  const handleStartDecision = async () => {
+  const handleStartDecision = () => {
     const title = titleInput.trim();
     if (!title) return;
 
     setDecisionTitle(title);
     setTitleInput("");
     setStep("options");
-
-    setIsLoadingSuggestions(true);
-    setOptionSuggestions(await fetchSuggestions(title, "options"));
-    setIsLoadingSuggestions(false);
-  };
-
-  const handleMoveToCriteria = async () => {
-    setStep("criteria");
-    if (criteriaSuggestions.length > 0) return;
-
-    setIsLoadingSuggestions(true);
-    setCriteriaSuggestions(await fetchSuggestions(decisionTitle, "criteria"));
-    setIsLoadingSuggestions(false);
   };
 
   // Scores and weights are stored by index, so removing an item invalidates them
@@ -122,8 +85,6 @@ export default function Home() {
     setDecisionTitle("");
     setOptions([]);
     setCriteria([]);
-    setOptionSuggestions([]);
-    setCriteriaSuggestions([]);
     resetEvaluation();
   };
 
@@ -142,42 +103,28 @@ export default function Home() {
   }
 
   if (step === "weighing") {
-    const weighingProps = {
-      decisionTitle,
-      criteria,
-      onWeight: handleWeight,
-      onComplete: () => setStep("results"),
-      onBack: () => setStep("evaluation"),
-    };
-
-    return inputMode === "conversational" ? (
-      <ConversationalWeighing
-        {...weighingProps}
-        alreadyWeighted={weights.length === criteria.length}
-        onSwitchMode={() => setInputMode("manual")}
+    return (
+      <ManualWeighing
+        decisionTitle={decisionTitle}
+        criteria={criteria}
+        weights={weights}
+        onWeight={handleWeight}
+        onComplete={() => setStep("results")}
+        onBack={() => setStep("evaluation")}
       />
-    ) : (
-      <ManualWeighing {...weighingProps} weights={weights} onSwitchMode={() => setInputMode("conversational")} />
     );
   }
 
   if (step === "evaluation") {
-    const evaluationProps = {
-      decisionTitle,
-      options,
-      criteria,
-      onScore: handleScore,
-      onComplete: () => setStep("weighing"),
-      onBack: () => setStep("criteria"),
-    };
-
-    return inputMode === "conversational" ? (
-      <ConversationalEvaluation {...evaluationProps} onSwitchMode={() => setInputMode("manual")} />
-    ) : (
+    return (
       <ManualEvaluation
-        {...evaluationProps}
+        decisionTitle={decisionTitle}
+        options={options}
+        criteria={criteria}
         scores={scores}
-        onSwitchMode={() => setInputMode("conversational")}
+        onScore={handleScore}
+        onComplete={() => setStep("weighing")}
+        onBack={() => setStep("criteria")}
       />
     );
   }
@@ -193,28 +140,6 @@ export default function Home() {
             onBack={() => setStep("options")}
             onNext={() => setStep("evaluation")}
             nextDisabled={criteria.length < 1}
-            extra={
-              <div className="flex flex-col gap-1.5">
-                <p className="text-xs text-muted-foreground">How do you want to score and weigh?</p>
-                <ToggleGroup
-                  aria-label="Scoring method"
-                  variant="outline"
-                  spacing={2}
-                  value={[inputMode]}
-                  onValueChange={(next) => {
-                    if (next.length > 0) setInputMode(next[next.length - 1] as InputMode);
-                  }}
-                  className="grid w-full grid-cols-2"
-                >
-                  <ToggleGroupItem value="manual">
-                    <SettingsIcon data-icon="inline-start" /> Tap to score
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="conversational">
-                    <ChatIcon data-icon="inline-start" /> Chat with AI
-                  </ToggleGroupItem>
-                </ToggleGroup>
-              </div>
-            }
           />
         }
       >
@@ -225,8 +150,6 @@ export default function Home() {
           onRemove={removeCriterion}
           placeholder="Add a criterion, e.g. Cost"
           emptyText="No criteria yet. Add at least one."
-          suggestions={criteriaSuggestions}
-          isLoadingSuggestions={isLoadingSuggestions}
         />
       </StepLayout>
     );
@@ -241,7 +164,7 @@ export default function Home() {
         footer={
           <NavFooter
             onBack={() => setStep("input")}
-            onNext={handleMoveToCriteria}
+            onNext={() => setStep("criteria")}
             nextDisabled={options.length < 2}
           />
         }
@@ -253,8 +176,6 @@ export default function Home() {
           onRemove={removeOption}
           placeholder="Add an option"
           emptyText="No options yet. Add at least two."
-          suggestions={optionSuggestions}
-          isLoadingSuggestions={isLoadingSuggestions}
         />
       </StepLayout>
     );

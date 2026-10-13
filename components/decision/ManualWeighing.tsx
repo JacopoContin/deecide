@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { ChatIcon } from "@/lib/icons";
 import { DEFAULT_WEIGHT, type Weight } from "@/lib/decision";
 import StepLayout from "./StepLayout";
 import NavFooter from "./NavFooter";
@@ -19,7 +18,6 @@ type ManualWeighingProps = {
   onWeight: (criterionIndex: number, weight: number) => void;
   onComplete: () => void;
   onBack: () => void;
-  onSwitchMode?: () => void;
 };
 
 export default function ManualWeighing({
@@ -29,7 +27,6 @@ export default function ManualWeighing({
   onWeight,
   onComplete,
   onBack,
-  onSwitchMode,
 }: ManualWeighingProps) {
   const getWeight = (criterionIndex: number) => weights.find((w) => w.criterionIndex === criterionIndex)?.weight;
   const weighted = criteria.filter((_, i) => getWeight(i) !== undefined).length;
@@ -46,13 +43,6 @@ export default function ManualWeighing({
           onNext={onComplete}
           nextLabel="See results"
           nextDisabled={!done}
-          extra={
-            onSwitchMode && (
-              <Button variant="ghost" onClick={onSwitchMode} className="self-center text-muted-foreground">
-                <ChatIcon data-icon="inline-start" /> Describe in chat instead
-              </Button>
-            )
-          }
         />
       }
     >
@@ -60,7 +50,7 @@ export default function ManualWeighing({
         <WeightLegend />
 
         <Card>
-          <CardHeader>
+          <CardHeader className="items-center">
             <CardTitle className="text-lg font-semibold">Importance</CardTitle>
             <CardAction>
               <Badge
@@ -71,12 +61,12 @@ export default function ManualWeighing({
               </Badge>
             </CardAction>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
+          <CardContent className="flex flex-col gap-5">
             {criteria.map((criterion, criterionIndex) => (
               <Fragment key={criterionIndex}>
                 {criterionIndex > 0 && <Separator />}
-                <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium">{criterion}</p>
+                <div className="flex flex-col gap-2.5">
+                  <p className="text-sm font-medium break-words">{criterion}</p>
                   <WeightScale
                     label={`Importance of ${criterion}`}
                     value={getWeight(criterionIndex)}

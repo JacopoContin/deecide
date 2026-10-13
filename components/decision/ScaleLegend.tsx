@@ -16,11 +16,12 @@ export default function ScaleLegend({ title, items }: ScaleLegendProps) {
       <InfoIcon />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>
-        <ul className="mt-1 flex flex-col gap-1.5">
+        {/* Two columns so every label starts at the same x, whatever the badge width */}
+        <ul className="mt-2 grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2">
           {items.map((item) => (
-            <li key={item.key} className="flex items-center gap-2">
-              {item.badge}
-              <span>
+            <li key={item.key} className="col-span-2 grid grid-cols-subgrid items-center">
+              <span className="grid *:w-full">{item.badge}</span>
+              <span className="min-w-0">
                 <span className="font-medium text-foreground">{item.label}</span> · {item.description.toLowerCase()}
               </span>
             </li>

@@ -49,4 +49,5 @@ export const WEIGHT_SCALE: WeightLevel[] = [
 export const getScoreLevel = (score: number | undefined) =>
   SCORE_SCALE.find((level) => level.value === score);
 
-export const formatSigned = (value: number) => (value > 0 ? `+${value}` : `${value}`);
+// Uses a true minus sign (U+2212) so "−1" and "+1" line up
+export const formatSigned = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `\u2212${-value}` : `${value}`);
