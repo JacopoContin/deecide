@@ -38,7 +38,7 @@ export default function StepLayout({
           <div className={cn(container, "pt-4 pb-3")}>
             <div className="flex items-start justify-between gap-2">
               <h1 className="font-heading text-xl font-semibold break-words sm:text-2xl">{title}</h1>
-              {stepIndex !== undefined && <HowItWorksButton className="-mr-2 shrink-0" />}
+              {stepIndex !== undefined && <HowItWorksButton className="-mr-1.5 shrink-0" />}
             </div>
             {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
           </div>

@@ -75,12 +75,14 @@ export function HowItWorksButton({ className }: { className?: string }) {
   return (
     <Button
       variant="ghost"
-      size="sm"
+      size="icon-sm"
+      aria-label="How it works"
+      title="How it works"
       aria-expanded={open}
       onClick={() => setHelpOpen(!open)}
       className={cn("text-muted-foreground", className)}
     >
-      <HelpIcon data-icon="inline-start" /> How it works
+      <HelpIcon />
     </Button>
   );
 }
