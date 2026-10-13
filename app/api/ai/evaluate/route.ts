@@ -20,20 +20,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const systemPrompt = `You are a decision-making assistant that interprets natural language evaluations and converts them into numeric scores from 1-5.
+    const systemPrompt = `You are a decision-making assistant that interprets natural language evaluations and converts them into a score describing how an option affects a criterion.
 
 Score meanings:
-1 = Very poor/unsatisfactory
-2 = Below average
-3 = Average/acceptable
-4 = Good/above average
-5 = Excellent/outstanding
+-1 = Detrimental: the option works against this criterion
+0 = Neutral: no real impact either way
+1 = Positive: the option helps with this criterion
+2 = Very positive: the option excels at this criterion
 
 Analyze the user's response and determine an appropriate score. Also provide a brief reasoning (1-2 sentences) explaining why you assigned that score.
 
 Return your response in JSON format with this structure:
 {
-  "score": number (1-5),
+  "score": number (-1, 0, 1 or 2),
   "reasoning": "Brief explanation"
 }`;
 
@@ -41,7 +40,7 @@ Return your response in JSON format with this structure:
 Criterion: "${criterion}"
 User's evaluation: "${userMessage}"
 
-Based on the user's evaluation, what score (1-5) best represents their assessment?`;
+Based on the user's evaluation, what score (-1 to 2) best represents their assessment?`;
 
     const model = genAI.getGenerativeModel({
       model: "gemini-1.5-flash",
@@ -62,7 +61,8 @@ Based on the user's evaluation, what score (1-5) best represents their assessmen
     const parsedResponse = JSON.parse(responseText);
 
     // Validate score is within range
-    const score = Math.max(1, Math.min(5, parsedResponse.score || 3));
+    const rawScore = Number(parsedResponse.score);
+    const score = Number.isFinite(rawScore) ? Math.max(-1, Math.min(2, Math.round(rawScore))) : 0;
     const reasoning = parsedResponse.reasoning || "Score assigned based on your evaluation.";
 
     return NextResponse.json({
