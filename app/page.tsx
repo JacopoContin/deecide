@@ -9,7 +9,6 @@ import DecisionResults from "@/components/decision/DecisionResults";
 import ListBuilder from "@/components/decision/ListBuilder";
 import StepLayout from "@/components/decision/StepLayout";
 import NavFooter from "@/components/decision/NavFooter";
-import HowItWorks from "@/components/decision/HowItWorks";
 import { ArrowRightIcon } from "@/lib/icons";
 import type { Score, Weight } from "@/lib/decision";
 
@@ -222,8 +221,6 @@ export default function Home() {
             </InputGroupAddon>
           </InputGroup>
         </form>
-
-        <HowItWorks className="self-center" />
       </div>
     </div>
   );
