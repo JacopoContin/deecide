@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { VoiceOrb } from "@/components/voice/voice-orb";
@@ -13,7 +13,7 @@ import ListBuilder from "@/components/decision/ListBuilder";
 import StepLayout from "@/components/decision/StepLayout";
 import NavFooter from "@/components/decision/NavFooter";
 import { ArrowRightIcon, ChatIcon, SettingsIcon } from "@/lib/icons";
-import { DEFAULT_WEIGHT, type Score, type Weight } from "@/lib/decision";
+import type { Score, Weight } from "@/lib/decision";
 
 type Step = "input" | "options" | "criteria" | "evaluation" | "weighing" | "results";
 // How the user scores options and weighs criteria: chatting with the AI or tapping buttons
@@ -45,8 +45,6 @@ export default function Home() {
   const [optionSuggestions, setOptionSuggestions] = useState<string[]>([]);
   const [criteriaSuggestions, setCriteriaSuggestions] = useState<string[]>([]);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
-  const [aiExplanation, setAiExplanation] = useState("");
-  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
   const [inputMode, setInputMode] = useState<InputMode>("conversational");
 
   const handleStartDecision = async () => {
@@ -75,7 +73,6 @@ export default function Home() {
   const resetEvaluation = () => {
     setScores([]);
     setWeights([]);
-    setAiExplanation("");
   };
 
   const addOption = (option: string) => {
@@ -103,12 +100,10 @@ export default function Home() {
       ...prev.filter((s) => !(s.optionIndex === optionIndex && s.criterionIndex === criterionIndex)),
       { optionIndex, criterionIndex, score },
     ]);
-    setAiExplanation("");
   };
 
   const handleWeight = (criterionIndex: number, weight: number) => {
     setWeights((prev) => [...prev.filter((w) => w.criterionIndex !== criterionIndex), { criterionIndex, weight }]);
-    setAiExplanation("");
   };
 
   const getScore = useCallback(
@@ -122,22 +117,6 @@ export default function Home() {
     [weights]
   );
 
-  const getWinningOptionIndex = useCallback(() => {
-    let best = -Infinity;
-    let winnerIndex = 0;
-    options.forEach((_, optionIndex) => {
-      const total = criteria.reduce(
-        (sum, _, ci) => sum + (getScore(optionIndex, ci) ?? 0) * (getWeight(ci) ?? DEFAULT_WEIGHT),
-        0
-      );
-      if (total > best) {
-        best = total;
-        winnerIndex = optionIndex;
-      }
-    });
-    return winnerIndex;
-  }, [options, criteria, getScore, getWeight]);
-
   const handleRestart = () => {
     setStep("input");
     setDecisionTitle("");
@@ -148,37 +127,6 @@ export default function Home() {
     resetEvaluation();
   };
 
-  // Fetch AI explanation when results load
-  useEffect(() => {
-    if (step !== "results" || aiExplanation !== "" || isLoadingExplanation) return;
-
-    setIsLoadingExplanation(true);
-    fetch("/api/ai/explain", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        decisionTitle,
-        options,
-        criteria,
-        scores,
-        weights,
-        winnerIndex: getWinningOptionIndex(),
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.explanation) {
-          setAiExplanation(data.explanation);
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to fetch AI explanation:", error);
-      })
-      .finally(() => {
-        setIsLoadingExplanation(false);
-      });
-  }, [step, aiExplanation, isLoadingExplanation, decisionTitle, options, criteria, scores, weights, getWinningOptionIndex]);
-
   if (step === "results") {
     return (
       <DecisionResults
@@ -187,8 +135,6 @@ export default function Home() {
         criteria={criteria}
         getScore={getScore}
         getWeight={getWeight}
-        aiExplanation={aiExplanation}
-        isLoadingExplanation={isLoadingExplanation}
         onBack={() => setStep("weighing")}
         onRestart={handleRestart}
       />
