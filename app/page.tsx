@@ -1,16 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Flex, Heading, IconButton, SegmentedControl, Text, TextField } from "@radix-ui/themes";
-import { ArrowRightIcon } from "@radix-ui/react-icons";
-import ConversationalEvaluation from "./components/ConversationalEvaluation";
-import ConversationalWeighing from "./components/ConversationalWeighing";
-import ManualEvaluation from "./components/ManualEvaluation";
-import DecisionResults from "./components/DecisionResults";
-import ListBuilder from "./components/ListBuilder";
-import StepLayout from "./components/StepLayout";
-import NavFooter from "./components/NavFooter";
-import { DEFAULT_WEIGHT, type Score, type Weight } from "./lib/decision";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { VoiceOrb } from "@/components/voice/voice-orb";
+import ConversationalEvaluation from "@/components/decision/ConversationalEvaluation";
+import ConversationalWeighing from "@/components/decision/ConversationalWeighing";
+import ManualEvaluation from "@/components/decision/ManualEvaluation";
+import DecisionResults from "@/components/decision/DecisionResults";
+import ListBuilder from "@/components/decision/ListBuilder";
+import StepLayout from "@/components/decision/StepLayout";
+import NavFooter from "@/components/decision/NavFooter";
+import { ArrowRightIcon, ChatIcon, SettingsIcon } from "@/lib/icons";
+import { DEFAULT_WEIGHT, type Score, type Weight } from "@/lib/decision";
 
 type Step = "input" | "options" | "criteria" | "evaluation" | "weighing" | "results";
 type EvaluationMode = "conversational" | "manual";
@@ -237,20 +239,26 @@ export default function Home() {
             onNext={() => setStep("evaluation")}
             nextDisabled={criteria.length < 1}
             extra={
-              <Flex direction="column" gap="1">
-                <Text size="1" color="gray">
-                  How do you want to score?
-                </Text>
-                <SegmentedControl.Root
-                  value={evaluationMode}
-                  onValueChange={(value) => setEvaluationMode(value as EvaluationMode)}
-                  size="2"
-                  className="w-full"
+              <div className="flex flex-col gap-1.5">
+                <p className="text-xs text-muted-foreground">How do you want to score?</p>
+                <ToggleGroup
+                  aria-label="Scoring method"
+                  variant="outline"
+                  spacing={2}
+                  value={[evaluationMode]}
+                  onValueChange={(next) => {
+                    if (next.length > 0) setEvaluationMode(next[next.length - 1] as EvaluationMode);
+                  }}
+                  className="grid w-full grid-cols-2"
                 >
-                  <SegmentedControl.Item value="conversational">Chat with AI</SegmentedControl.Item>
-                  <SegmentedControl.Item value="manual">Tap to score</SegmentedControl.Item>
-                </SegmentedControl.Root>
-              </Flex>
+                  <ToggleGroupItem value="conversational">
+                    <ChatIcon data-icon="inline-start" /> Chat with AI
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="manual">
+                    <SettingsIcon data-icon="inline-start" /> Tap to score
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
             }
           />
         }
@@ -296,16 +304,15 @@ export default function Home() {
   }
 
   return (
-    <div className="h-dvh flex flex-col safe-top safe-bottom">
-      <Flex direction="column" justify="center" className="flex-1 w-full max-w-[560px] mx-auto px-4 py-8" gap="6">
-        <Flex direction="column" gap="3" align="center" className="text-center">
-          <Heading as="h1" size={{ initial: "8", sm: "9" }}>
-            Deecide
-          </Heading>
-          <Text size="3" color="gray" className="max-w-[320px]">
+    <div className="flex h-dvh flex-col pt-[var(--safe-top)] pb-[var(--safe-bottom)]">
+      <div className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-8 px-4 py-8">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <VoiceOrb size={112} glow={0.4} aria-hidden />
+          <h1 className="font-heading text-4xl font-semibold sm:text-5xl">Deecide</h1>
+          <p className="max-w-xs text-muted-foreground">
             &ldquo;ดี Dee&rdquo; means good in Thai. Make better decisions with structure and clarity.
-          </Text>
-        </Flex>
+          </p>
+        </div>
 
         <form
           onSubmit={(e) => {
@@ -313,22 +320,30 @@ export default function Home() {
             handleStartDecision();
           }}
         >
-          <TextField.Root
-            size="3"
-            value={titleInput}
-            onChange={(e) => setTitleInput(e.target.value)}
-            placeholder="What are you deciding?"
-            aria-label="What are you deciding?"
-            autoFocus
-          >
-            <TextField.Slot side="right">
-              <IconButton type="submit" size="2" disabled={!titleInput.trim()} aria-label="Start">
+          <InputGroup className="h-12 rounded-2xl pointer-coarse:h-12">
+            <InputGroupInput
+              value={titleInput}
+              onChange={(e) => setTitleInput(e.target.value)}
+              placeholder="What are you deciding?"
+              aria-label="What are you deciding?"
+              autoFocus
+              className="pl-4"
+            />
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                type="submit"
+                variant="default"
+                size="icon-sm"
+                disabled={!titleInput.trim()}
+                aria-label="Start"
+                className="rounded-xl"
+              >
                 <ArrowRightIcon />
-              </IconButton>
-            </TextField.Slot>
-          </TextField.Root>
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
         </form>
-      </Flex>
+      </div>
     </div>
   );
 }

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Button, Flex, Text } from "@radix-ui/themes";
-import { MixerHorizontalIcon } from "@radix-ui/react-icons";
-import ChatInterface, { type Message } from "./ChatInterface";
+import { Button } from "@/components/ui/button";
+import { Suggestion, Suggestions } from "@/components/ai/suggestions";
+import { SettingsIcon } from "@/lib/icons";
+import { SCORE_SCALE, formatSigned, getScoreLevel } from "@/lib/decision";
+import ChatInterface, { type ChatMessage } from "./ChatInterface";
 import StepLayout from "./StepLayout";
 import NavFooter from "./NavFooter";
-import { SCORE_SCALE, formatSigned, getScoreLevel } from "../lib/decision";
 
 type ConversationalEvaluationProps = {
   decisionTitle: string;
@@ -43,7 +44,7 @@ export default function ConversationalEvaluation({
     return `How does "${options[optionIndex]}" affect "${criteria[criterionIndex]}"?\n\nDescribe it in your own words, or tap a score below.`;
   };
 
-  const [messages, setMessages] = useState<Message[]>(() => [
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       role: "assistant",
       content: `Let's score each option. The scale is:\n${scaleHint}\n\n${askAbout(0)}`,
@@ -129,8 +130,8 @@ export default function ConversationalEvaluation({
           nextDisabled={!isComplete}
           extra={
             onSwitchMode && (
-              <Button variant="ghost" color="gray" size="2" onClick={onSwitchMode} className="self-center">
-                <MixerHorizontalIcon /> Score with buttons instead
+              <Button variant="ghost" onClick={onSwitchMode} className="self-center text-muted-foreground">
+                <SettingsIcon data-icon="inline-start" /> Score with buttons instead
               </Button>
             )
           }
@@ -145,24 +146,20 @@ export default function ConversationalEvaluation({
         disabled={isComplete}
         quickReplies={
           !isComplete && (
-            <Flex gap="2" align="center" wrap="wrap">
-              <Text size="1" color="gray">
-                Quick score:
-              </Text>
+            <Suggestions aria-label="Quick score">
               {SCORE_SCALE.map((level) => (
-                <Button
+                <Suggestion
                   key={level.value}
-                  size="1"
-                  variant="soft"
-                  color={level.color}
+                  suggestion={String(level.value)}
+                  onSelect={() => handleQuickScore(level.value)}
                   disabled={isLoading}
-                  onClick={() => handleQuickScore(level.value)}
-                  title={level.label}
+                  title={level.description}
                 >
-                  {formatSigned(level.value)} {level.label}
-                </Button>
+                  <span className="font-semibold tabular-nums text-foreground">{formatSigned(level.value)}</span>{" "}
+                  {level.label}
+                </Suggestion>
               ))}
-            </Flex>
+            </Suggestions>
           )
         }
       />

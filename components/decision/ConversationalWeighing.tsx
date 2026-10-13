@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@radix-ui/themes";
-import ChatInterface, { type Message } from "./ChatInterface";
+import { Suggestion, Suggestions } from "@/components/ai/suggestions";
+import { DEFAULT_WEIGHT, MAX_WEIGHT, MIN_WEIGHT } from "@/lib/decision";
+import ChatInterface, { type ChatMessage } from "./ChatInterface";
 import StepLayout from "./StepLayout";
 import NavFooter from "./NavFooter";
-import { DEFAULT_WEIGHT, MAX_WEIGHT, MIN_WEIGHT } from "../lib/decision";
 
 type ConversationalWeighingProps = {
   decisionTitle: string;
@@ -25,7 +25,7 @@ export default function ConversationalWeighing({
   onBack,
   alreadyWeighted = false,
 }: ConversationalWeighingProps) {
-  const [messages, setMessages] = useState<Message[]>(() => [
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
     {
       role: "assistant",
       content: `Now let's decide how much each criterion matters (${MIN_WEIGHT} = not important, ${MAX_WEIGHT} = extremely important):\n\n${criteria
@@ -116,9 +116,9 @@ export default function ConversationalWeighing({
         isLoading={isLoading}
         quickReplies={
           !hasWeights && (
-            <Button variant="soft" size="2" onClick={weighEqually} disabled={isLoading} className="self-start">
-              Weigh all equally
-            </Button>
+            <Suggestions>
+              <Suggestion suggestion="Weigh all equally" onSelect={weighEqually} disabled={isLoading} />
+            </Suggestions>
           )
         }
       />

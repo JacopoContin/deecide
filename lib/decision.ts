@@ -13,15 +13,15 @@ export type ScoreLevel = {
   value: number;
   label: string;
   description: string;
-  color: "red" | "gray" | "green" | "grass";
+  tone: "negative" | "neutral" | "positive";
 };
 
 // How well an option performs on a criterion
 export const SCORE_SCALE: ScoreLevel[] = [
-  { value: -1, label: "Detrimental", description: "Works against this criterion", color: "red" },
-  { value: 0, label: "Neutral", description: "No real impact either way", color: "gray" },
-  { value: 1, label: "Positive", description: "Helps with this criterion", color: "green" },
-  { value: 2, label: "Very positive", description: "Excels at this criterion", color: "grass" },
+  { value: -1, label: "Detrimental", description: "Works against this criterion", tone: "negative" },
+  { value: 0, label: "Neutral", description: "No real impact either way", tone: "neutral" },
+  { value: 1, label: "Positive", description: "Helps with this criterion", tone: "positive" },
+  { value: 2, label: "Very positive", description: "Excels at this criterion", tone: "positive" },
 ];
 
 export const MIN_SCORE = -1;

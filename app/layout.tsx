@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
-import { Theme } from "@radix-ui/themes";
+import { Inter } from "next/font/google";
+import { cn } from "@/lib/utils";
+import { VoiceOrbProvider } from "@/components/voice/voice-orb";
 import "./globals.css";
+
+const sans = Inter({ variable: "--font-sans", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Deecide",
@@ -33,11 +37,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // JDS is designed dark first
+    <html lang="en" className={cn("dark", sans.variable)}>
       <body>
-        <Theme appearance="dark" accentColor="violet" grayColor="mauve" radius="large" scaling="100%">
-          {children}
-        </Theme>
+        <VoiceOrbProvider variant="ring">{children}</VoiceOrbProvider>
       </body>
     </html>
   );
